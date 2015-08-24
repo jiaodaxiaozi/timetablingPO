@@ -1,0 +1,5 @@
+train_id;train_type;from;to;triangle_t1;triangle_t2;triangle_t3;triangle_v;window_t1;window_t2;intermediate_stops
+93;PR600816;TNK;RUT;39600;39690;39780;1000;39600;450000;BFS
+94;PR6A0816;KV;TNK;12;13;14;1000;15;16;
+95;PR600816;TNK;KV;15;16;17;1000;18;19;AB,CD
+96;PR600816;KV;TNK;15;16;17;1000;18;19;
