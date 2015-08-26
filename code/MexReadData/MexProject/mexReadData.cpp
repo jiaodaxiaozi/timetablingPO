@@ -42,7 +42,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgTxt("Argument type is incorrect!");
 
 	// check the function output arguments
-	if (nlhs != 4)
+	if (nlhs != 5)
 		mexErrMsgTxt("Number of output arguments is incorrect!");
 
 	// get the path to the input data
@@ -88,8 +88,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	size_t nbRequests = requests->size();
 	vector<Graph<TimePos, float>>* network = new vector<Graph<TimePos, float>>(nbRequests);
 	vector<vector<const Node<TimePos, float>*>>* ordering = new vector<vector<const Node<TimePos, float>*>>(nbRequests);
+	plhs[4] = mxCreateNumericMatrix(nbRequests, 1, mxINT32_CLASS, mxREAL);
+	int *p = (int*) mxGetData(plhs[4]);
 	for (int i = 0; i < nbRequests; ++i)
-		unroll((*requests)[i], track, stations, durations, (*network)[i], (*ordering)[i]);
+		p[i] = unroll((*requests)[i], track, stations, durations, (*network)[i], (*ordering)[i]);
 
 	mexEvalString("disp('OK')");
 

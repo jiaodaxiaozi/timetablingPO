@@ -20,7 +20,7 @@ inline int nextStep(const int t, const int step = TIME_STEP) {
 }
 
 
-void unroll(
+int unroll(
     const TrainRequest& request,
     const Graph<string, int>& track,
     const StationTable& stations,

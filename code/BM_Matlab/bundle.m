@@ -1,4 +1,4 @@
-function [ mu_new, lambda_new, diff] = bundle(mu, Phi, g)
+function [ mu_new, lambda_new, stop] = bundle(mu, Phi, g)
 %bundle computes the new dual iterate using aggregate bundle quadratic method
 
 % Global variables from the main program

@@ -154,7 +154,7 @@ void recursive_unroll(
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void unroll(
+int unroll(
     const TrainRequest& request,
     const Graph<string, int>& track,
     const StationTable& stations,
@@ -211,6 +211,9 @@ void unroll(
 
     if (sinkNode->inEdges().size() == 0) 
 		cerr << "[warning] unroll: no valid path for request " << request.train_id << endl;
+
+	// return the number of possible paths
+	return sinkNode->inEdges().size();
 }
 
 
