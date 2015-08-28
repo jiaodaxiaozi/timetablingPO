@@ -13,8 +13,6 @@ k = 1; % current iteration number
 B = 12; % number of spatial blocks
 T = 24*60*2; % number of time step 
 R = 5; % number of requests
-P = zeros(1,R); % number of generated path per request
-stop = false;
 
 %%% Parameters to store the iteration results
 mu = zeros(B,T,k_max+1); %mu(:,:,1) = rand(B,T);% prices initially random
@@ -22,7 +20,7 @@ Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(R,k_max); % multiplier for the convex combinations of paths
 Path = zeros(R,k_max); % store index of the path which was chosen for a request at certain iteration
-
+u = 1; % coefficient in front of the quadratic term in Bundle method
 %%% Global param
 global ids
 global requests
@@ -33,15 +31,20 @@ global ordering
 [ids, requests, network, ordering, P] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
 
 %%% Dual iteration
-while (k <= k_max) && (~stop)
+while (k <= k_max)
+    
     %%% Solve the shortes path (C++)
     [Phi(:,k), g(:,:,:,k), Path(:,k)] = MexShortestPathSeq(ids, requests, network, ordering, mu(:,:,k));
     
     %%% Compute the new prices (Matlab)
-    [mu(:,:,k+1), lambda(:,1:k), stop] = bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k)); 
+    [mu(:,:,k+1), lambda(:,1:k), stop, serious, u] = bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k), u); 
     
-    % next iteration
-    k = k+1;
+    % stop or next iteration if the step is serious
+    if serious
+        k = k+1;
+    elseif stop
+        break;    
+    end
 end
 
 %%% Compute the fractional solutions

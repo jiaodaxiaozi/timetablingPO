@@ -1,5 +1,5 @@
-function [ mu_new, lambda_new, stop] = bundle(mu, Phi, g)
-%bundle computes the new dual iterate using aggregate bundle quadratic method
+function [ mu_new, lambda_new, stop, serious, u_new] = bundle(mu, Phi, g, u)
+%bundle Computes the new dual iterate using aggregate bundle quadratic method
 
 % Global variables from the main program
 global ids
@@ -8,8 +8,8 @@ global network
 global ordering
 
 % Parameters
-m = 0.7; % for taking serious steps
-u = 1; % step-size control
+m_L = 0.3; % for taking serious steps
+u_min = 0.1; % minimal value for u
 
 % Get some useful data
 B = size(mu,1);
@@ -46,10 +46,21 @@ achieved = Phi(k) - (fval - 0.5*u*norm(mu_computed-reshape(mu_current,size(mu_co
 [Phi_expected, ~] = MexShortestPathSeq(ids, requests, network, ordering, reshape(mu_computed,[B T]));
 expected = Phi(k) - Phi_expected;
 ratio = achieved/expected;
-% Check if we take a serious step
-if ratio >= m
-    mu_new = reshape(mu_computed,[B,T]);  
+% check the stopping condition
+if expected >= -eps
+    stop = true;
+    return;
 else
-    mu_new = mu_current;
+    stop = false;
 end
-diff = expected - achieved;
+% Check if we take a serious step
+if ratio >= m_L
+    serious = true;
+    mu_new = reshape(mu_computed,[B,T]);
+    u_new = max([u_min u/10 2*u*(1-ratio)]);
+else
+    serious = false;
+    mu_new = mu_current;
+    u_new = u;
+end
+

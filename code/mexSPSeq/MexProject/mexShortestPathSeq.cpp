@@ -21,17 +21,19 @@
 using namespace std;
 
 /*
-- nlhs: number of output arguments (here ?)
+- nlhs: number of output arguments (here 3)
 - plhs: output arguments
-	[0] objective value
-	[1] subgradient
-- nrhs: number of input arguments (here 1)
+	[0] objective values Phi_r
+	[1] subgradients g_btr
+	[2] shortest paths p_r
+- nrhs: number of input arguments (here 5)
 - prhs: input arguments
 	[0] ids
 	[1]	requests
 	[2]	network
 	[3]	ordering
-	[4] costs
+	[4]	costs
+
 */
 
 
@@ -47,7 +49,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if (nrhs != 5)
 		mexErrMsgTxt("Number of input arguments is incorrect!");
 
-	if (nlhs != 2)
+	if (nlhs != 3)
 		mexErrMsgTxt("Number of output arguments is incorrect!");
 
 	// get the input data
@@ -79,19 +81,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	//  shortest path
 	mexEvalString("disp('-> Compute the shortest paths ...') ");
 	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> path(nbRequests);
-	plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
 	float *Phi = (float*)mxGetPr(plhs[0]);
-	*Phi = 0;
 	for (int i = 0; i < nbRequests; ++i){
-		*Phi -= dagsp(network[i], ordering[i], path[i]);
+		Phi[i] -= dagsp(network[i], ordering[i], path[i]);
 	}
 	mexEvalString("disp('OK')");
 
 	// evaluate the path (Phi & subgradient)
 	mexEvalString("disp('-> Allocate the subgradient matrix ...') ");
-	plhs[1] = mxCreateNumericMatrix(B, T, mxINT8_CLASS, mxREAL);
+	size_t pDims[] = {B, T, nbRequests};
+	plhs[1] = mxCreateNumericArray(3, pDims, mxINT8_CLASS, mxREAL);
 	int8_T *g = (int8_T*)mxGetPr(plhs[1]);
-	g = (int8_T*)mxCalloc(B*T, 8);
+	g = (int8_T*)mxCalloc(B*T*nbRequests, 8);
 	mexEvalString("disp('OK')");
 
 	mexEvalString("disp('-> Evaluate the paths ...') ");
@@ -101,7 +103,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			path[i],
 			ids, 
 			T,
-			g
+			g+i*B*T
 			);
 	}
 		
