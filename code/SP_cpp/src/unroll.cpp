@@ -160,7 +160,8 @@ int unroll(
     const StationTable& stations,
     const DurationTable& durations,
     Graph<TimePos, float>& network,
-    vector<const Node<TimePos, float>*>& ordering) 
+	vector<const Node<TimePos, float>*>& ordering, 
+	unordered_map<int, int>& path_ids)
 {
     //  find path from start to goal
     Graph<string, int> path;
@@ -209,10 +210,18 @@ int unroll(
     auto sinkNode = network.node(sink);
     ordering.push_back(sinkNode);
 
+	int val = 1;
+	for (auto it : sinkNode->inEdges())
+	{
+		path_ids[it.first->id()] = val;
+		val += 1;
+	}
+
+
     if (sinkNode->inEdges().size() == 0) 
 		cerr << "[warning] unroll: no valid path for request " << request.train_id << endl;
 
-	// return the number of possible paths
+	// return the number of possible paths for this request
 	return sinkNode->inEdges().size();
 }
 

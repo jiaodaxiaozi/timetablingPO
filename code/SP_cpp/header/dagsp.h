@@ -61,7 +61,6 @@ C dagsp(
 		relax_node(it, costs, predecessors);
 	
 	return costs.at(sorting[sorting.size() - 1]);
-
 }
 
 
@@ -95,12 +94,17 @@ void evaluatePath(
 		// get the block
 		const string& pos = curr->second->label().position_;
 		const auto& id = ids.find(pos);
-		const auto b = id->second.first;
-
+		const auto b = id->second.first;	
+			
 		// Subgradient
 		for (size_t i = col1; i <= col2 ; i++)
 		{
-			subGrad[b*T + i] += 1;
+			// Initialize with the capacity
+			if (subGrad[b*T + i] == 0)
+				subGrad[b*T + i] = id->second.second;
+
+			// One unit of capacity is consumed
+			subGrad[b*T + i] -= 1;
 		}
 
 		// next precedent

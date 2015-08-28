@@ -131,27 +131,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\mexhandle\ObjectHandle.h" />
-    <ClInclude Include="..\..\..\SP_code\header\common.h" />
-    <ClInclude Include="..\..\..\SP_code\header\csvreader.h" />
-    <ClInclude Include="..\..\..\SP_code\header\dagsp.h" />
-    <ClInclude Include="..\..\..\SP_code\header\graph.h" />
-    <ClInclude Include="..\..\..\SP_code\header\matrix.h" />
-    <ClInclude Include="..\..\..\SP_code\header\mpi_constants.h" />
-    <ClInclude Include="..\..\..\SP_code\header\node.h" />
-    <ClInclude Include="..\..\..\SP_code\header\pathsearch.h" />
-    <ClInclude Include="..\..\..\SP_code\header\timepos.h" />
-    <ClInclude Include="..\..\..\SP_code\header\timer.h" />
-    <ClInclude Include="..\..\..\SP_code\header\trainrequest.h" />
-    <ClInclude Include="..\..\..\SP_code\header\unroll.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\SP_cpp\src\csvreader.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\pathsearch.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\timepos.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\trainrequest.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\unroll.cpp" />
     <ClCompile Include="mexShortestPathSeq.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\SP_cpp\header\common.h" />
+    <ClInclude Include="..\..\SP_cpp\header\csvreader.h" />
+    <ClInclude Include="..\..\SP_cpp\header\dagsp.h" />
+    <ClInclude Include="..\..\SP_cpp\header\graph.h" />
+    <ClInclude Include="..\..\SP_cpp\header\matrix.h" />
+    <ClInclude Include="..\..\SP_cpp\header\node.h" />
+    <ClInclude Include="..\..\SP_cpp\header\pathsearch.h" />
+    <ClInclude Include="..\..\SP_cpp\header\timepos.h" />
+    <ClInclude Include="..\..\SP_cpp\header\timer.h" />
+    <ClInclude Include="..\..\SP_cpp\header\trainrequest.h" />
+    <ClInclude Include="..\..\SP_cpp\header\unroll.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

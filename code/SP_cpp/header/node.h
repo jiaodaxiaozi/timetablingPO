@@ -126,16 +126,16 @@ class Node
         const N& label() const { return label_; }
 
 		// get all the incoming edges (const version)
-        const unordered_map<const Node*, C>& inEdges() const { return inEdges_; }
+		const unordered_map<const Node*, C>& inEdges() const { return inEdges_; }
 
 		// get all the outgoing edges (const version)
-        const unordered_map<const Node*, C>& outEdges() const { return outEdges_; }
+		const unordered_map<const Node*, C>& outEdges() const { return outEdges_; }
 
 		// get all the incoming edges 
-        unordered_map<const Node*, C>& inEdges() { return inEdges_; }
+		unordered_map<const Node*, C>& inEdges() { return inEdges_; }
 
 		// get all the outgoing edges 
-        unordered_map<const Node*, C>& outEdges() { return outEdges_; }
+		unordered_map<const Node*, C>& outEdges() { return outEdges_; }
 
 
         //  friends (for outputting the node info) uses the static variables for verbosity

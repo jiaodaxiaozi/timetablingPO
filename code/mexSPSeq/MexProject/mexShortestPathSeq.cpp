@@ -25,7 +25,7 @@ using namespace std;
 - plhs: output arguments
 	[0] objective values Phi_r
 	[1] subgradients g_btr
-	[2] shortest paths p_r
+	[2] shortest paths index p_r
 - nrhs: number of input arguments (here 5)
 - prhs: input arguments
 	[0] ids
@@ -46,7 +46,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     Node<TimePos, float>::printOutEdges = true;
 
 	// check the number of arguments
-	if (nrhs != 5)
+	if (nrhs != 6)
 		mexErrMsgTxt("Number of input arguments is incorrect!");
 
 	if (nlhs != 3)
@@ -59,6 +59,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	vector<TrainRequest> &requests = get_object<vector<TrainRequest>>(prhs[1]);
 	vector<Graph<TimePos, float>> &network = get_object<vector<Graph<TimePos, float>>>(prhs[2]);
 	vector<vector<const Node<TimePos, float>*>> &ordering = get_object<vector<vector<const Node<TimePos, float>*>>>(prhs[3]);
+	vector<unordered_map<int, int>> &path_ids = get_object<vector<unordered_map<int, int>>>(prhs[4]);
 	mexEvalString("disp('OK')");
 
 	// get the track costs
@@ -84,7 +85,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
 	float *Phi = (float*)mxGetPr(plhs[0]);
 	for (int i = 0; i < nbRequests; ++i){
-		Phi[i] -= dagsp(network[i], ordering[i], path[i]);
+		Phi[i] = -dagsp(network[i], ordering[i], path[i]);
 	}
 	mexEvalString("disp('OK')");
 
@@ -96,7 +97,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	g = (int8_T*)mxCalloc(B*T*nbRequests, 8);
 	mexEvalString("disp('OK')");
 
-	mexEvalString("disp('-> Evaluate the paths ...') ");
+	plhs[2] = mxCreateNumericMatrix(nbRequests, 1, mxINT8_CLASS, mxREAL);
+	int8_T *sp_index = (int8_T*)mxGetPr(plhs[2]);
+
+	mexEvalString("disp('-> Evaluate the subgradient of the shortest path ...') ");
 	for (int i = 0; i < nbRequests; ++i){
 		evaluatePath(
 			ordering[i].back(),
@@ -105,8 +109,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			T,
 			g+i*B*T
 			);
+		auto sinkNode = ordering[i][ordering.size() - 1];
+		sp_index[i] = path_ids[i].at(path[i].at(sinkNode)->id());
 	}
-		
+	
 	mexEvalString("disp('OK')");
 
 	// OK
