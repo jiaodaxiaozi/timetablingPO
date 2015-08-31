@@ -32,7 +32,8 @@ using namespace std;
 	[1]	requests
 	[2]	network
 	[3]	ordering
-	[4]	costs
+	[4]	paths indices
+	[5]	costs
 
 */
 
@@ -64,12 +65,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	// get the track costs
 	mexEvalString("disp('-> get the costs ...') ");
-	int B = mxGetM(prhs[4]);
-	int T = mxGetN(prhs[4]);
+	int B = mxGetM(prhs[5]);
+	int T = mxGetN(prhs[5]);
 	matf mu(B,T);
 	for (int r = 0; r < B; r++)
 		for (int c = 0; c < T; c++)
-			mu.at(r, c) = *(mxGetPr(prhs[4])+r*T+c);
+			mu.at(r, c) = *(mxGetPr(prhs[5])+r*T+c);
 	mexEvalString("disp('OK')");
 	
 	//  assign costs
@@ -83,7 +84,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	mexEvalString("disp('-> Compute the shortest paths ...') ");
 	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> path(nbRequests);
 	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
-	float *Phi = (float*)mxGetPr(plhs[0]);
+	double *Phi = (double*)mxGetPr(plhs[0]);
 	for (int i = 0; i < nbRequests; ++i){
 		Phi[i] = -dagsp(network[i], ordering[i], path[i]);
 	}
@@ -94,11 +95,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	size_t pDims[] = {B, T, nbRequests};
 	plhs[1] = mxCreateNumericArray(3, pDims, mxINT8_CLASS, mxREAL);
 	int8_T *g = (int8_T*)mxGetPr(plhs[1]);
-	g = (int8_T*)mxCalloc(B*T*nbRequests, 8);
+	//g = (int8_T*)mxCalloc(B*T*nbRequests, 8);
 	mexEvalString("disp('OK')");
 
 	plhs[2] = mxCreateNumericMatrix(nbRequests, 1, mxINT8_CLASS, mxREAL);
 	int8_T *sp_index = (int8_T*)mxGetPr(plhs[2]);
+	//sp_index = (int8_T*)mxCalloc(nbRequests, 8);
 
 	mexEvalString("disp('-> Evaluate the subgradient of the shortest path ...') ");
 	for (int i = 0; i < nbRequests; ++i){
@@ -109,10 +111,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			T,
 			g+i*B*T
 			);
-		auto sinkNode = ordering[i][ordering.size() - 1];
-		sp_index[i] = path_ids[i].at(path[i].at(sinkNode)->id());
+	}	
+	mexEvalString("disp('OK')");
+
+	mexEvalString("disp('-> Get the shortest paths indices ...') ");
+	for (int i = 0; i < nbRequests; ++i){
+		auto sinkNode = ordering[i][ordering[i].size()-1];
+		auto id = path[i].at(sinkNode)->id();
+		sp_index[i] = (path_ids[i]).at(id);
 	}
-	
 	mexEvalString("disp('OK')");
 
 	// OK

@@ -6,9 +6,10 @@ global ids
 global requests
 global network
 global ordering
+global path_ids
 
 % Parameters
-m_L = 0.3; % for taking serious steps
+m_L = 0.3; % in (0,0.5) for taking serious steps
 u_min = 0.1; % minimal value for u
 
 % Get some useful data
@@ -22,7 +23,7 @@ mu_current = mu(:,:,end);
 ij = (2:B*T+1)'; v = u*ones(B*T,1);
 H = sparse(ij,ij,v);
 f = [1; -u*mu_current(:)]; sparse(f);
-A = [-ones(k*R,1), zeros(k,B*T)]; %% add mu >= 0
+A = [-ones(k*R,1), zeros(k*R,B*T)]; %% add mu >= 0 ?
 b = zeros(k*R,1);
 for r=1:R
     for j=1:k
@@ -46,26 +47,28 @@ sparse(b);
 mu_computed = xval(2:end);
 lambda_new = lambda_struct.ineqlin;
 
-% get the achieved and the expected descent
-achieved = sum(Phi(:,k)) - (fval - 0.5*u*norm(mu_computed-reshape(mu_current,size(mu_computed)),2));
-[Phi_expected, ~] = MexShortestPathSeq(ids, requests, network, ordering, reshape(mu_computed,[B T]));
-expected = sum(Phi(:,k)) - Phi_expected;
-ratio = achieved/expected;
+% get the achieved and the predicted descent
+[Phi_achieved, ~,~] = ...
+    MexSeqSP(ids, requests, network, ordering, path_ids, reshape(mu_computed,[B T]));
+Phi_predicted = (fval - 0.5*u*norm(mu_computed-reshape(mu_current,size(mu_computed)),2));
+achieved = sum(Phi_achieved) - sum(Phi);
+predicted = Phi_predicted  - sum(Phi);
 % check the stopping condition
-if expected >= -eps
+if predicted >= -eps
     stop = true;
     return;
 else
     stop = false;
 end
 % Check if we take a serious step
-if ratio >= m_L
+ratio = achieved/predicted;
+if ratio <= m_L
     serious = true;
     mu_new = reshape(mu_computed,[B,T]);
     u_new = max([u_min u/10 2*u*(1-ratio)]);
 else
     serious = false;
     mu_new = mu_current;
-    u_new = u;
+    u_new = u;    
 end
 
