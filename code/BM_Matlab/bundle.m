@@ -45,7 +45,7 @@ sparse(b);
 
 % Get the mu and the multipliers
 mu_computed = xval(2:end);
-lambda_new = lambda_struct.ineqlin;
+lambda_new = reshape(lambda_struct.ineqlin,[R k]);
 
 % get the achieved and the predicted descent
 [Phi_achieved, ~,~] = ...
@@ -71,4 +71,3 @@ else
     mu_new = mu_current;
     u_new = u;    
 end
-

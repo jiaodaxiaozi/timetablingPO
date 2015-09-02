@@ -31,19 +31,20 @@ Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(R,k_max); % multiplier for the convex combinations of paths
 Path = zeros(R,k_max); % store index of the path which was chosen for a request at certain iteration
-u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
+u( = 1; % coefficient in front of the quadratic term in Bundle method
 
 
 %%% Dual iteration
-while (k <= 20)
+while (k <= k_max)
     
     %%% Solve the shortes path (C++)
     [Phi(:,k), g(:,:,:,k), Path(:,k)] = ...
         MexSeqSP(ids, requests, network, ordering, path_ids, mu(:,:,k));
     
     %%% Compute the new prices (Matlab)
-    [mu(:,:,k+1), lambda(:,1:k), stop, serious, u(k+1)] = ...
-        bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k), u(k));
+    %[mu(:,:,k+1), lambda(:,1:k), stop, serious, u] = ...
+    [mu(:,:,k+1), lambda(:,1:k), ~, ~, ~] = ...
+        bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k), u);
     
     % stop or next iteration if the step is serious
     if serious
@@ -66,9 +67,10 @@ for r=1:R % train requests
         x{p,r} = {sum_lambda};
     end
 end
+celldisp(x);
 
 %%% Rapid Branching
-%celldisp(x);
+
 
 
 %%% Results
