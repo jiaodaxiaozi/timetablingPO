@@ -69,6 +69,24 @@ end
 
 %%% Rapid Branching
 %celldisp(x);
+%checking number of integer infeasibilities
+n_i = 0;
+for s = x'
+    s = cell2mat(s);
+    for t = s';
+        if t ~= 0 && t ~= 1;
+            n_i = n_i + 1;
+        end
+    end
+end
 
+%Loop until integer solution is found
+l = sparse(zeros(size(x))); u = ones(size(x));%initially no variables are fixed
+MU = mu(:,:,end); %last multipliers from intitial bundle phase
+x_root = x; %the best solution from the bundle phase
+while n_i >= 1
+    [x_best,B_star] = GeneratePotentialFixings(l,u,x,D,V);
+    [x,x_root,l,u] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R);
+end
 
 %%% Results
