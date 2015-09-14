@@ -29,7 +29,7 @@ R = 4; % number of requests
 mu = zeros(B,T,k_max+1);% mu(:,:,1) = rand(B,T);% prices initially random
 Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
-lambda = zeros(R,k_max); % multiplier for the convex combinations of paths
+lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
 Path = zeros(R,k_max); % store index of the path which was chosen for a request at certain iteration
 u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
 
@@ -42,7 +42,7 @@ while (k <= 20)
         MexSeqSP(ids, requests, network, ordering, path_ids, mu(:,:,k));
     
     %%% Compute the new prices (Matlab)
-    [mu(:,:,k+1), lambda(:,1:k), stop, serious, u(k+1)] = ...
+    [mu(:,:,k+1), lambda(1:k,:), stop, serious, u(k+1)] = ...
         bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k), u(k));
     
     % stop or next iteration if the step is serious
@@ -54,7 +54,7 @@ while (k <= 20)
 end
 
 %%% Compute the fractional solutions
-x = cell(1,R); %% main binary variable of the IP problem
+x = cell(1,R); %% main binary v ariable of the IP problem
 for r=1:R % train requests
     for p=1:P(r) % paths
         sum_lambda = 0; % approximation of x(p_r)
@@ -72,7 +72,7 @@ end
 %checking number of integer infeasibilities
 n_i = 0;
 for s = x'
-    s = cell2mat(s);
+    s = cell2mat(s); %% !!!! s is reused
     for t = s';
         if t ~= 0 && t ~= 1;
             n_i = n_i + 1;
