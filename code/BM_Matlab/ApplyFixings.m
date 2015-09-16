@@ -5,7 +5,7 @@
 %reached or only one potential fix remain. We are trying to minimize an
 %upper bound so we want to be below our target value.
 
-function [x,x_root,l,u] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R);
+function [x,x_root,l,u,n_i] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R)
 V_perturbated = V;
 kappa = 0.05; %target value factor
 nr_of_trains = R; 

@@ -92,7 +92,7 @@ MU = mu(:,:,end); %last multipliers from intitial bundle phase
 x_root = x; %the best solution from the bundle phase
 while n_i >= 1
     [x_best,B_star] = GeneratePotentialFixings(l,u,x,D,V);
-    [x,x_root,l,u,n_i] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R);
+    [x,x_root,l,u,] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R);
 end
 
 %%% Results
