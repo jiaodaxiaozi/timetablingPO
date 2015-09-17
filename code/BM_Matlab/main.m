@@ -16,6 +16,7 @@ global ordering
 global path_ids
 
 %%% Read the network data (OBS. specify the absolute path with "/")
+%%% add D and V here
 [ids, requests, network, ordering, path_ids, P] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
 
 %%% Initializing parameters
@@ -53,7 +54,6 @@ while (k <= k_max)
     end
 end
 
-
 x = zeros(max(P),R); %% main binary variable of the IP problem
 for r=1:R % train requests
     for p=1:P(r) % paths
@@ -66,11 +66,10 @@ for r=1:R % train requests
         x(p,r) = sum;
     end
 end
-disp(x);
+sparse(x);
 
 % data needed
 % D is a cell where element d_r,p is capacity consumption
-
 
 break;
 %%% Rapid Branching
@@ -91,6 +90,7 @@ l = sparse(zeros(size(x))); u = ones(size(x));%initially no variables are fixed
 MU = mu(:,:,end); %last multipliers from intitial bundle phase
 x_root = x; %the best solution from the bundle phase
 while n_i >= 1
+    
     [x_best,B_star] = GeneratePotentialFixings(l,u,x,D,V);
     [x,x_root,l,u,n_i] = ApplyFixings(l,u,x_best,x_root,D,V,B_star,MU,R);
 end
