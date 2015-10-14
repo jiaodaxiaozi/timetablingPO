@@ -16,8 +16,9 @@ global ordering
 global path_ids
 
 %%% Read the network data (OBS. specify the absolute path with "/")
-%%% add D and V here
-[ids, requests, network, ordering, path_ids, P] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
+% [ids, requests, network, ordering, path_ids, P] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
+[ids, requests, network, ordering, path_ids, P] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
+
 
 %%% Initializing parameters
 k_max = 5; % maximum number of iterations

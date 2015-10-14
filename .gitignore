@@ -194,3 +194,11 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+code/BM_Matlab/MexSeqSP.mexw64
+code/BM_Matlab/MexSeqSP.lib
+code/BM_Matlab/MexReadData.mexw64
+code/BM_Matlab/MexReadData.exp
+code/BM_Matlab/MexReadData.lib
+code/BM_Matlab/MexSeqSP.exp
+code/MexReadData/MexProject/MexProject.vcxproj
+code/mexSPSeq/MexProject/MexProject.vcxproj
