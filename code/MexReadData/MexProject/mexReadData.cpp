@@ -42,7 +42,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgTxt("Argument type is incorrect!");
 
 	// check the function output arguments
-	if (nlhs != 6)
+	if (nlhs != 9)
 		mexErrMsgTxt("Number of output arguments is incorrect!");
 
 	// get the path to the input data
@@ -103,7 +103,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	plhs[2] = create_handle(network);
 	plhs[3] = create_handle(ordering);
 	plhs[4] = create_handle(path_ids);
+
+	// additional information: number of requests (R), time steps (T), blocks (B)
+	plhs[6] = mxCreateNumericMatrix(1, 1, mxUINT8_CLASS, mxREAL);
+	int8_T *R = (int8_T*)mxGetPr(plhs[6]);
+	R[0] = nbRequests;
  
+	plhs[7] = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
+	INT16_T *T = (INT16_T*)mxGetPr(plhs[7]);
+	T[0] = 24 * 60 * 2;
+
+	plhs[8] = mxCreateNumericMatrix(1, 1, mxUINT8_CLASS, mxREAL);
+	int8_T *B = (int8_T*)mxGetPr(plhs[8]);
+	B[0] = ids->size(); // !!! check this
+		//track.nodes().size();
+
 	mexPrintf("mexReadData executed successfully!\n");
 	return;
 

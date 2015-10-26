@@ -202,3 +202,5 @@ code/BM_Matlab/MexReadData.lib
 code/BM_Matlab/MexSeqSP.exp
 code/MexReadData/MexProject/MexProject.vcxproj
 code/mexSPSeq/MexProject/MexProject.vcxproj
+*.lib
+*.exp

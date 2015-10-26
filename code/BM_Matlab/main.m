@@ -16,16 +16,15 @@ global ordering
 global path_ids
 
 %%% Read the network data (OBS. specify the absolute path with "/")
-% [ids, requests, network, ordering, path_ids, P] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
-[ids, requests, network, ordering, path_ids, P] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
-
+[ids, requests, network, ordering, path_ids, P, R, T, B] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
+%[ids, requests, network, ordering, path_ids, P, R, T, B] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %%% Initializing parameters
 k_max = 5; % maximum number of iterations
 k = 1; % current iteration number
-B = 12; % number of spatial blocks
-T = 24*60*2; % number of time step 
-R = 4; % number of requests
+%B = 12; % number of spatial blocks
+%T = 24*60*2; % number of time step 
+%R = 5; % number of requests
 
 %%% Parameters to store the iteration results
 mu = zeros(B,T,k_max+1);% mu(:,:,1) = rand(B,T);% prices initially random
@@ -68,13 +67,14 @@ for r=1:R % train requests
     end
 end
 sparse(x);
-
 % data needed
 % D is a cell where element d_r,p is capacity consumption
 
+x;
 break;
+
 %%% Rapid Branching
-%celldisp(x);
+
 %checking number of integer infeasibilities
 n_i = 0;
 for s = x'
