@@ -77,22 +77,22 @@ class Graph
         const Node<N, C>* addNode(const N& label) {
             auto item = pair<N, Node<N, C>>(label, Node<N, C>(label));
             auto succ = nodes_.insert(item);
-            return &succ.first->second; //  false if key already existed
+            return &succ.first->second;
         }
 
-		// Add th edge (val1 <-> val2) to the graph
+		// Add the directed edge (nodefrom -> nodeto) to the graph
         bool addEdge(
-            const N& val1, 
-            const N& val2, 
-            const C& cost = 0) 
+            const N& nodefrom, 
+            const N& nodeto, 
+            const C& val = 0) 
         {
-            assert(hasNode(val1) && hasNode(val2));
+			assert(hasNode(nodefrom) && hasNode(nodeto));
 
-            auto n1 = node(val1);
-            auto n2 = node(val2);
+			auto from = node(nodefrom);
+			auto to = node(nodeto);
 
-            n1->addEdgeTo(n2, cost);
-            n2->addEdgeFrom(n1, cost);
+			from->addEdgeTo(to, val);
+			to->addEdgeFrom(from, val);
 
             return true;
         }

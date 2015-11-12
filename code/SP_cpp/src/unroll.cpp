@@ -3,16 +3,12 @@
 #include <algorithm>
 #include <cmath>
 #include <deque>
+//#include <mex.h>
 
 #include "unroll.h"
 #include "pathsearch.h"
 
 using namespace std;
-
-
-
-
-
 
 
 
@@ -48,7 +44,7 @@ void recursive_unroll(
 
     //  when reached destination, add free edge to sink and return
     if (currStation == request.to) {
-        network.addEdge(currTimePos, sink);
+        network.addEdge(currTimePos, sink, 0); // no cost in the ending node
         return;
     }
 
@@ -76,7 +72,7 @@ void recursive_unroll(
             TimePos nextStay(TimePos::State::Stopped, t, currStation, 0);
             bool existed = network.hasNode(nextStay);
             const auto nextNode = network.addNode(nextStay);
-            network.addEdge(currTimePos, nextStay); // COST!!
+            network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
 
             if (!existed) 
                 actives.push_front(nextNode);
@@ -157,7 +153,6 @@ void recursive_unroll(
 int unroll(
     const TrainRequest& request,
     const Graph<string, int>& track,
-    const StationTable& stations,
     const DurationTable& durations,
     Graph<TimePos, float>& network,
 	vector<const Node<TimePos, float>*>& ordering, 
@@ -165,12 +160,13 @@ int unroll(
 {
     //  find path from start to goal
     Graph<string, int> path;
-    exctractPath(track, request.from, request.to, path);
+	exctractPath(track, request.from, request.to, path);
+
 
     //  get upper time bounds
     unordered_map<string, int> windows;
-    stationWindows(request, path, durations, windows);
-
+	stationWindows(request, path, durations, windows);	
+	
     //  add source and sink nodes
     TimePos source(TimePos::State::Stopped, 0, "START", 0);
     network.addNode(source);
@@ -185,7 +181,7 @@ int unroll(
     {
         TimePos node(TimePos::State::Stopped, t, request.from, 0);
         const auto nodePtr = network.addNode(node);
-        network.addEdge(source, node);
+        network.addEdge(source, node, 0); // no cost in the starting node
 
         actives.push_front(nodePtr);
     }
@@ -230,14 +226,11 @@ int unroll(
 // Maps the blocks with cost matrix linearly
 void linearBlockMatrixMapping(
     const Graph<string, int>& track,
-	const StationTable& stations,
-	unordered_map<string, pair<size_t, size_t>>& ids)
+//	const StationTable& stations,
+	unordered_map<string, size_t>& ids)
 {
-    size_t id = 0;
-
 	for (const auto& node : track.nodes()){
-		ids[node.first] = make_pair(id, stations.at(node.first));
-		id++;
+		ids[node.first] = node.second.id();
 	}
         
 }
@@ -249,7 +242,7 @@ void linearBlockMatrixMapping(
 //   the graph from unroll is fix
 void assignEdgeCosts(
     const matf& costs,                          //  (block x steps) cost matrix
-	const unordered_map<string, pair<size_t, size_t>>& ids,   //  block -> cost matrix row
+	const unordered_map<string, size_t>& ids,   //  block -> cost matrix row
     const TrainRequest& request,
     Graph<TimePos, float>& network)
 {
@@ -270,17 +263,17 @@ void assignEdgeCosts(
 
             const string& pos = from->label().position_;
 
+			
             //  normal nodes get costs from matrix
             if (pos != "START") 
             {
-                const auto& id = ids.find(pos);
-                
+				const auto& id = ids.find(pos);
                 assert (id != ids.end());
 
-                const size_t row = id->second.first;
-
+                const size_t row = id->second;
 				// capacity usage cost minus capacity
-				edge.second = costs.colSum(row, col1, col2) - id->second.second; 
+				edge.second = costs.colSum(row-1, col1, col2);
+
             //  first layer nodes get assigned negative profit
             } 
             else { // if Source Node
@@ -288,8 +281,14 @@ void assignEdgeCosts(
             }
 
             //  edges to the virtual end node have no costs for now
-            if (to->label().position_ == "END") 
-                edge.second = 0.0;
+			// but here we append the constant cost 
+			if (to->label().position_ == "END"){
+				edge.second = 0;
+				for (auto id : ids) // all capacities are assumed equal to 1
+					edge.second -= costs.colSum(id.second-1, 0, costs.cols()-1);
+			}
+
+                
         }
     }
 }
