@@ -18,8 +18,8 @@ global path_ids
 
 %%% Read the network data (OBS. specify the absolute path with "/")
 [ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = ...
-    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/realistic/malmbanan');
-%    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10');
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10');
+%    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/realistic/malmbanan');    
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %%% Initializing parameters
