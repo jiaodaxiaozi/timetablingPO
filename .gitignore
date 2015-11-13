@@ -204,3 +204,4 @@ code/MexReadData/MexProject/MexProject.vcxproj
 code/mexSPSeq/MexProject/MexProject.vcxproj
 *.lib
 *.exp
+*.mexw64
