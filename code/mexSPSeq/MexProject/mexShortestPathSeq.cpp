@@ -157,7 +157,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexEvalString("disp('OK')");
 #pragma endregion
 
-
 	// OK
 	if (DEBUG)
 		mexPrintf("mexSPSeq executed successfully!\n");

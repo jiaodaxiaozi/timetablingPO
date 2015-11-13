@@ -82,7 +82,7 @@ void evaluatePath(
 	while (curr->label().position_ != "START")
 	{
 		// get the times
-		int time = curr->label().time_;
+		int time = curr->label().time_-1;
 		string position = curr->label().position_;
 		int b = ids.at(position)-1;
 

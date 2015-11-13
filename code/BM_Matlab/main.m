@@ -17,7 +17,9 @@ global path_ids
 
 
 %%% Read the network data (OBS. specify the absolute path with "/")
-[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
+[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = ...
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/realistic/malmbanan');
+%    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10');
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %%% Initializing parameters
@@ -31,7 +33,7 @@ g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
 Path = zeros(R,k_max); % store index of the path which was chosen for each request and at each Bundle iteration
 u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
-capCons = zeros(B,T,R); % capacity consumption of the shortest path
+capCons = zeros(B,T,R,k_max); % capacity consumption of the shortest path
 
 
 %%% Bundle phase
@@ -39,8 +41,13 @@ capCons = zeros(B,T,R); % capacity consumption of the shortest path
 while (k <= k_max)
     
     %%% Solve the shortes path (C++ function)
-   [Phi(:,k), g(:,:,:,k), Path(:,k), capCons] = ...
+   [Phi(:,k), g(:,:,:,k), Path(:,k), capCons(:,:,:,k)] = ...
         MexSeqSP(ids, requests, network, ordering, path_ids, mu(:,:,k));
+    
+    % draw the timetable with the computed optimal paths
+    DrawTimetable(capCons(:,:,:,k));
+    
+    break;
     
     %%% Compute the new prices (Matlab function)
     [mu(:,:,k+1), lambda(1:k,:), stop, serious, u(k+1)] = ...
@@ -53,8 +60,7 @@ while (k <= k_max)
         break;    
     end
     
-    % draw the timetable
-    DrawTimetable(capCons);
+
 end
 
 % Constructs the fractional solution
