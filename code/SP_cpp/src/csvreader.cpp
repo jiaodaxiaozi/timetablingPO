@@ -162,22 +162,26 @@ bool readTrainRequests(
 // Reads the stations data (name, capacity, location type)
 bool readStationTypes(
     const string& filename,
-    StationTable& table)
+	unordered_map<string, int>& table,
+	unordered_map<string, size_t>& ids)
 {
     ifstream fin(filename);
 
     if (!fin.is_open())
         return false;
 
-    string name, cap, type, offset;
+    string name, type, offset;
+	string cap;
 
     getline(fin, offset);  //  read header
 
+	int count = 1;
     while (fin)
     {
         if (!getline(fin, name, ';')) 
             break;
 
+		// capacity at the station
         if (!getline(fin, cap, ';')) 
             return false;
 
@@ -188,7 +192,8 @@ bool readStationTypes(
             return false; 
 
 		table[name] = stoi(cap); // capacity in the station
-    }
+		ids[name] = count++;
+	}
 
     return true;
 }
@@ -205,9 +210,9 @@ bool readTrackGraph(
     if (!fin.is_open())
         return false;
 
-    string id, start, end, line, dist;
+    string id, start, end, header;
 
-    getline(fin, line);  // read header
+    getline(fin, header);  // read header
 
     while (fin)
     {
@@ -217,22 +222,19 @@ bool readTrackGraph(
         if (!getline(fin, start, ';')) 
             return false;
 
-        if (!getline(fin, end, ';')) 
+        if (!getline(fin, end)) 
             return false; 
 
-        if (!getline(fin, line, ';')) 
-            return false; 
+        graph.addNode(start);//start node
+        graph.addNode(end);//end node
 
-        if (!getline(fin, dist)) 
-            return false; 
-
-        graph.addNode(start);//start
-        graph.addNode(end);//end
-
-        if (!graph.addEdge(start, end, stoi(dist)))//distance
+        if (!graph.addEdge(start, end))	//
             return false;
-    }
 
+		// add the opposite direction in order to avoid reading it in the track data
+		if (!graph.addEdge(end, start))
+			return false;
+    }
     return true;
 }
 

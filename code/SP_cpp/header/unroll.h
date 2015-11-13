@@ -23,7 +23,7 @@ inline int nextStep(const int t, const int step = TIME_STEP) {
 int unroll(
     const TrainRequest& request,
     const Graph<string, int>& track,
-    const StationTable& stations,
+//    const StationTable& stations,
     const DurationTable& durations,
     Graph<TimePos, float>& network,
     vector<const Node<TimePos, float>*>& ordering,
@@ -33,14 +33,14 @@ int unroll(
 // Maps the blocks with cost matrix linearly
 void linearBlockMatrixMapping(
     const Graph<string, int>& track,
-	const StationTable& stations,
-	unordered_map<string, pair<size_t, size_t>>& ids
+//	const StationTable& stations,
+	unordered_map<string, size_t>& ids
 );
 
 
 void assignEdgeCosts(
     const matf& costs,
-	const unordered_map<string, pair<size_t, size_t>>& ids,
+	const unordered_map<string, size_t>& ids,
     const TrainRequest& request,
     Graph<TimePos, float>& network
 );

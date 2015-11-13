@@ -18,6 +18,31 @@
 #include "ObjectHandle.h"
 
 
+/*
+***** OUTPUTS
+- nlhs: number of output arguments (here 9)
+- plhs: output arguments
+[0] ids			pointer to the ids mapping table
+[1] requests    pointer to the train requests
+[2] network		pointer to the graph network
+[3] ordering	pointer to the ordering table
+[4] path_ids	pointer to the ordering table
+[5] P			number of possible paths for each request (generated paths)
+[6] R			number of train requests
+[7] T			number of time slots
+[8] B			number of blocks
+[9] Cap			capacity of each station	
+
+***** INPUTS
+- nrhs: number of input arguments (here 1)
+- prhs: input arguments
+[0] The absolute path to the data folder
+
+*/
+
+// for debugging mode, set to 1 (0 otherwise)
+#define DEBUG 1
+
 using namespace std;
 
 ObjectHandle<unordered_map<string, size_t>> *handle_ids;
@@ -26,15 +51,10 @@ ObjectHandle<Graph<TimePos, float>> *handle_network;
 ObjectHandle<vector<const Node<TimePos, float>*>> *handle_ordering;
 
 
-
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
 
-	Node<TimePos, float>::printCosts = true;
-	Node<TimePos, float>::printLabels = false;
-	Node<TimePos, float>::printInEdges = false;
-	Node<TimePos, float>::printOutEdges = true;
-
+#pragma region arguments_check
 	// check the function input arguments
 	if (nrhs != 1)
 		mexErrMsgTxt("Number of arguments is incorrect!");
@@ -42,49 +62,63 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexErrMsgTxt("Argument type is incorrect!");
 
 	// check the function output arguments
-	if (nlhs != 9)
+	if (nlhs != 10)
 		mexErrMsgTxt("Number of output arguments is incorrect!");
 
+#pragma endregion 
+
+
+#pragma region read_data
 	// get the path to the input data
 	string dataPath = mxArrayToString(prhs[0]);
 
 	//  read duration table
-	mexEvalString("disp('-> read duration data from file ...') ");
+	if (DEBUG)
+		mexEvalString("disp('-> read duration data from file ...') ");
 	bool succ = false;
 	DurationTable durations;
 	succ = readDurationTable(dataPath + "/type_train2.csv", durations);
 	assert(succ);
-	mexEvalString("disp('OK')");
+	if (DEBUG)
+		mexEvalString("disp('OK')");
+	cout << durations << endl;
 
 	//  read Station Table
-	mexEvalString("disp('-> read stations data from file ...')");
-	StationTable stations;
-	succ = readStationTypes(dataPath + "/stations.csv", stations);
+	if (DEBUG)
+		mexEvalString("disp('-> read stations data from file ...')");
+	unordered_map<string, size_t> *ids = new unordered_map<string, size_t>();
+	unordered_map<string, int> stations;
+	succ = readStationTypes(dataPath + "/stations.csv", stations, *ids);
 	assert(succ);
-	mexEvalString("disp('OK')");
+	if (DEBUG)
+		mexEvalString("disp('OK')");
 
 	//  read track graph
-	mexEvalString("disp('-> read tracks data from file ...') ");
+	if (DEBUG)
+		mexEvalString("disp('-> read tracks data from file ...') ");
 	Graph<string, int> track;
 	succ = readTrackGraph(dataPath + "/tracks.csv", track);
 	assert(succ);
-	mexEvalString("disp('OK')");
+	if (DEBUG)
+		mexEvalString("disp('OK')");
 
 	//  read sample request
-	mexEvalString("disp('-> read requests data from file ...') ");
+	if (DEBUG)
+		mexEvalString("disp('-> read requests data from file ...') ");
 	vector<TrainRequest>* requests = new vector<TrainRequest>();
 	succ = readTrainRequests(dataPath + "/sample_input.csv", *requests);
 	assert(succ);
-	mexEvalString("disp('OK')");
+	if (DEBUG)
+		mexEvalString("disp('OK')");
 
-	// Blocks-matrix mapping 
-	mexEvalString("disp('-> blocks-matrix mapping  ...') ");
-	unordered_map<string, pair<size_t, size_t>> *ids = new unordered_map<string, pair<size_t, size_t>>();
-	linearBlockMatrixMapping(track, stations, *ids);
-	mexEvalString("disp('OK')");
+#pragma endregion
 
+
+
+#pragma region network_construction
 	// Graph unrolling
-	mexEvalString("disp('-> Graph unrolling  ...') ");
+	if (DEBUG)
+		mexEvalString("disp('-> Graph unrolling  ...') ");
 	size_t nbRequests = requests->size();
 	vector<Graph<TimePos, float>>* network = new vector<Graph<TimePos, float>>(nbRequests);
 	vector<vector<const Node<TimePos, float>*>>* ordering = new vector<vector<const Node<TimePos, float>*>>(nbRequests);
@@ -92,10 +126,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	plhs[5] = mxCreateNumericMatrix(nbRequests, 1, mxINT32_CLASS, mxREAL);
 	int *p = (int*)mxGetData(plhs[5]);
 	for (int i = 0; i < nbRequests; ++i)
-		p[i] = unroll((*requests)[i], track, stations, durations, (*network)[i], (*ordering)[i], (*path_ids)[i]);
+		p[i] = unroll((*requests)[i], track, durations, (*network)[i], (*ordering)[i], (*path_ids)[i]);
+	if (DEBUG)
+		mexEvalString("disp('OK')");
+#pragma endregion
 
-	mexEvalString("disp('OK')");
 
+
+#pragma region build_output
 	// Output the data and the unrolled graph to the caller in Matlab
 	// ids - requests - network - ordering
 	plhs[0] = create_handle(ids);
@@ -115,10 +153,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	plhs[8] = mxCreateNumericMatrix(1, 1, mxUINT8_CLASS, mxREAL);
 	int8_T *B = (int8_T*)mxGetPr(plhs[8]);
-	B[0] = ids->size(); // !!! check this
-		//track.nodes().size();
+	B[0] = (*ids).size(); 
 
-	mexPrintf("mexReadData executed successfully!\n");
-	return;
+	// Capacity of each space block
+	plhs[9] = mxCreateNumericMatrix(B[0], 1, mxUINT8_CLASS, mxREAL);
+	int8_T *Cap = (int8_T*)mxGetPr(plhs[9]);
+	for (const auto& st : stations)
+		Cap[(*ids).at(st.first)-1] = st.second;
+
+#pragma endregion
+
+	if (DEBUG)
+		mexPrintf("mexReadData executed successfully!\n");
 
 }

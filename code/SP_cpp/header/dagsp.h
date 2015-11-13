@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <unordered_map>
+//#include <mex.h>
 
 #include <stdint.h>
 
@@ -60,6 +61,7 @@ C dagsp(
 	for (auto it : sorting)
 		relax_node(it, costs, predecessors);
 	
+	// The path cost
 	return costs.at(sorting[sorting.size() - 1]);
 }
 
@@ -69,50 +71,32 @@ template <class N, typename C>
 void evaluatePath(
 	const Node<N, C>* sink,
 	const unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>& predecessors,
-	const unordered_map<string, pair<size_t, size_t>> &ids,
-	int T,
-	int8_t* subGrad = NULL
+	const unordered_map<string, size_t> &ids,
+	int B,
+	double* subGrad,
+	double* capMat
 	)
 {
-	auto pred = sink;
-	auto curr = predecessors.find(sink);
-	while (curr != predecessors.end())
+	auto curr = predecessors.at(sink);
+
+	while (curr->label().position_ != "START")
 	{
 		// get the times
-		const int t1 = nextStep(curr->second->label().time_, TIME_STEP);
-		const int t2 = nextStep(pred->label().time_, TIME_STEP);
+		int time = curr->label().time_-1;
+		string position = curr->label().position_;
+		int b = ids.at(position)-1;
 
-		const int col1 = t1 / TIME_STEP;
-		const int col2 = t2 / TIME_STEP;
+		// Subgradient & capacity consumption
+		// Initialize with the capacity
+		if (subGrad[b + B*time] == 0)
+			subGrad[b + B*time] = 1; // capacity 1 for all blocks for now
 
-		//mexPrintf("%d (%d)--> %d (%d)\n", col1, t1, col2, t2);
+		// One unit of capacity is consumed
+		subGrad[b + B*time] -= 1;
+		capMat[b + B*time] = 1;
 
-		// the source is reached
-		if (t1 == 0)
-			return;
-
-		// get the block
-		const string& pos = curr->second->label().position_;
-		const auto& id = ids.find(pos);
-		const auto b = id->second.first;	
-			
-		// Subgradient
-		for (size_t i = col1; i <= col2 ; i++)
-		{
-			// Initialize with the capacity
-			if (subGrad[b*T + i] == 0)
-				subGrad[b*T + i] = id->second.second;
-
-			// One unit of capacity is consumed
-			subGrad[b*T + i] -= 1;
-		}
-
-		// next precedent
-		pred = curr->second;
-		curr = predecessors.find(pred);
+		// move to the predecessor node
+		curr = predecessors.at(curr);			
 	}
-
 }
-
-
 #endif

@@ -14,11 +14,11 @@ template <class N, typename C>
 class Node 
 {
 	public:
-		//  static variables (mainly for ouputting control)
-		static bool printInEdges;
-		static bool printOutEdges;
-		static bool printLabels;
-		static bool printCosts;
+	//  static variables (mainly for ouputting control)
+	static bool printInEdges;
+	static bool printOutEdges;
+	static bool printLabels;
+	static bool printCosts;
 
 	protected:
 
@@ -27,8 +27,8 @@ class Node
 
 		int id_; // node identifier (number)
 		N label_; // node label (mainly string)
-		unordered_map<const Node*, C> inEdges_; // incoming edges with their costs
-		unordered_map<const Node*, C> outEdges_; // outgoing edges with their costs
+		unordered_map<const Node*, C> inEdges_; // incoming edges with their costs (or capacity for network nodes)
+		unordered_map<const Node*, C> outEdges_; // outgoing edges with their costs (or capacity for network nodes)
 
 	public:
 		// constructor from node label
@@ -48,22 +48,22 @@ class Node
         }
 
 
-        //  add incoming edge to the node with cost (default. 0)
-        void addEdgeFrom(Node* parent, const C& cost = 0.0) 
+        //  add incoming edge to the node with a value (cost or capacity)
+        void addEdgeFrom(Node* parent, const C& val) 
         {
             if (parent == nullptr)
                 return;
 
-            inEdges_[parent] = cost;
+            inEdges_[parent] = val;
         }
 
-		//  add outgoing edge to the node with cost (default. 0)
-        void addEdgeTo(Node* child, const C& cost = 0.0) 
+		//  add outgoing edge to the node with a value (cost or capacity)
+        void addEdgeTo(Node* child, const C& val) 
         {
             if (child == nullptr)
                 return;
 
-            outEdges_[child] = cost;
+            outEdges_[child] = val;
         }
 
 
@@ -217,6 +217,7 @@ class Node
 template <class N, typename C>
 int Node<N, C>::instances_ = 0;
 
+
 template <class N, typename C>
 bool Node<N, C>::printInEdges = true;
 
@@ -228,7 +229,6 @@ bool Node<N, C>::printLabels = true;
 
 template <class N, typename C>
 bool Node<N, C>::printCosts = true;
-
 
 typedef const Node<string, int> nodesi;
 

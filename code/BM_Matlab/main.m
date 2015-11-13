@@ -15,34 +15,41 @@ global network
 global ordering
 global path_ids
 
+
 %%% Read the network data (OBS. specify the absolute path with "/")
-[ids, requests, network, ordering, path_ids, P, R, T, B] = MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data');
-%[ids, requests, network, ordering, path_ids, P, R, T, B] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
+[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = ...
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10');
+%    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/realistic/malmbanan');    
+%[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %%% Initializing parameters
 k_max = 5; % maximum number of iterations
 k = 1; % current iteration number
-%B = 12; % number of spatial blocks
-%T = 24*60*2; % number of time step 
-%R = 5; % number of requests
 
 %%% Parameters to store the iteration results
 mu = zeros(B,T,k_max+1);% mu(:,:,1) = rand(B,T);% prices initially random
 Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
-Path = zeros(R,k_max); % store index of the path which was chosen for a request at certain iteration
+Path = zeros(R,k_max); % store index of the path which was chosen for each request and at each Bundle iteration
 u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
+capCons = zeros(B,T,R,k_max); % capacity consumption of the shortest path
 
 
-%%% Dual iteration
+%%% Bundle phase
+
 while (k <= k_max)
     
-    %%% Solve the shortes path (C++)
-    [Phi(:,k), g(:,:,:,k), Path(:,k)] = ...
+    %%% Solve the shortes path (C++ function)
+   [Phi(:,k), g(:,:,:,k), Path(:,k), capCons(:,:,:,k)] = ...
         MexSeqSP(ids, requests, network, ordering, path_ids, mu(:,:,k));
     
-    %%% Compute the new prices (Matlab)
+    % draw the timetable with the computed optimal paths
+    DrawTimetable(capCons(:,:,:,k));
+    
+    break;
+    
+    %%% Compute the new prices (Matlab function)
     [mu(:,:,k+1), lambda(1:k,:), stop, serious, u(k+1)] = ...
         bundle(mu(:,:,1:k), Phi(:,1:k), g(:,:,:,1:k), u(k));
     
@@ -52,8 +59,11 @@ while (k <= k_max)
     elseif stop
         break;    
     end
+    
+
 end
 
+% Constructs the fractional solution
 x = zeros(max(P),R); %% main binary variable of the IP problem
 for r=1:R % train requests
     for p=1:P(r) % paths
@@ -67,14 +77,19 @@ for r=1:R % train requests
     end
 end
 sparse(x);
-% data needed
-% D is a cell where element d_r,p is capacity consumption
 
-x;
-break;
+return;
 
-%%% Rapid Branching
 
+%%%%%%%% Data needed
+%
+% - (done) capCons(b,t,r)       is a multidimensional matrix with capacity consumption
+% for each request
+% - (done) Cap(b)               is the capacity of each space block
+
+
+
+%%% Branch & Bound phase
 
 %checking if integer infeasibilities exist
 int_tol = 10^-6;

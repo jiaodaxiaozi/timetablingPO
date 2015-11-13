@@ -21,7 +21,7 @@ mu_current = mu(:,:,end);
 [ mu_computed, objval, lambda_new] = bundlequadprog(mu, Phi, g, u);
 
 % get the achieved and the predicted descent
-[Phi_achieved, ~,~] = ...
+[Phi_achieved,~,~,~] = ...
     MexSeqSP(ids, requests, network, ordering, path_ids, reshape(mu_computed,[B T]));
 Phi_predicted = (objval - 0.5*u*norm(mu_computed-reshape(mu_current,size(mu_computed)),2));
 achieved = sum(Phi_achieved) - sum(Phi);

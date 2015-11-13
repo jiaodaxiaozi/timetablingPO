@@ -26,7 +26,7 @@ enum LocationType {
 };
 
 // Type definition for train durations data
-typedef map<BlockType, int> bi; // motion type and speed
+typedef map<BlockType, int> bi; // motion type and travel time (duration)
 typedef map<string, bi> sbi; // destination station and above
 typedef map<string, sbi> ssbi; // starting station and above
 typedef ssbi DurationTable; // all train motion duration info
@@ -44,7 +44,8 @@ bool readDurationTable(
 // Reads the stations data (name, capacity, location type)
 bool readStationTypes(
     const string& filename,
-    StationTable& table
+    StationTable& table,
+	unordered_map<string, size_t>& ids
 );
 
 // Reads the requests data (trainId, type, from, to, triangle, window)
