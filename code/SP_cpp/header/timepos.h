@@ -7,7 +7,7 @@
 class TimePos  {
 public:
     enum State {
-        Fullspeed, Stopped
+        Fullspeed, Wait, Stop
     };
     
     TimePos(State state, int time, std::string position, int waitTimeRemaining);

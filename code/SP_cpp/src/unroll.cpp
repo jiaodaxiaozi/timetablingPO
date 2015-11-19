@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <deque>
-//#include <mex.h>
+#include <mex.h>
 
 #include "unroll.h"
 #include "pathsearch.h"
@@ -23,6 +23,7 @@ void recursive_unroll(
     vector<const Node<TimePos, float>*>& ordering,
     deque<const Node<TimePos, float>*>& actives) 
 {
+
     //  nothing to do if there is no node left
     if (actives.empty())
         return;
@@ -44,7 +45,7 @@ void recursive_unroll(
 
     //  when reached destination, add free edge to sink and return
     if (currStation == request.to) {
-        network.addEdge(currTimePos, sink, 0); // no cost in the ending node
+        network.addEdge(currTimePos, sink); // no cost in the ending node (will be added in cost assignment)
         return;
     }
 
@@ -61,23 +62,49 @@ void recursive_unroll(
         ) != request.intermediate_stops.end())
     );
 
+
     //  wait (don't wait in first layer. it is constructed according to profit beforehand)
     if (currStation != request.from && 
-        currTimePos.state_ == TimePos::State::Stopped) 
+        currTimePos.state_ == TimePos::State::Wait) 
     {
-        const int t = currTimePos.time_ + TIME_STEP;
+		int t = currTimePos.time_ + TIME_STEP;  // randomly wait
+
+		t = nextStep(t, TIME_STEP);
 
         if (t <= currWindow)
         {
-            TimePos nextStay(TimePos::State::Stopped, t, currStation, 0);
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
             bool existed = network.hasNode(nextStay);
             const auto nextNode = network.addNode(nextStay);
             network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
 
-            if (!existed) 
-                actives.push_front(nextNode);
+			if (!existed){
+				actives.push_front(nextNode);
+			}        
         }
     }
+
+	//  Intermediate compulsory stop
+	if (currStation != request.from &&
+		currTimePos.state_ == TimePos::State::Stop)
+	{
+		int t = currTimePos.time_ + 6*TIME_STEP;  // minimal stop time (e.g. 3min)
+
+		t = nextStep(t, TIME_STEP);
+
+		if (t <= currWindow)
+		{
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
+			bool existed = network.hasNode(nextStay);
+			const auto nextNode = network.addNode(nextStay);
+			network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
+
+			if (!existed){
+				actives.push_front(nextNode);
+			}
+		}
+	}
+
 
     //  get duration table
     //  NOTE:
@@ -85,12 +112,16 @@ void recursive_unroll(
     //    string, which is prevented by earlier 
     //      currStation == request.to 
     //    exit
+
     const auto& currDurations = durations.at(currStation).at(nextStation);
 
     //  *-stop
-    if (currTimePos.state_ == TimePos::State::Fullspeed ||
-        currTimePos.state_ == TimePos::State::Stopped) 
-    {
+	/// !!! With this we can stop in block signals even though we do not request it
+	// for this add if(stopRequested)
+//    if (currTimePos.state_ == TimePos::State::Fullspeed ||
+//       currTimePos.state_ == TimePos::State::Stopped) 
+	if (currTimePos.state_ != TimePos::State::Stop)
+	{
         int t = currTimePos.time_;
 
         //  full-stop
@@ -101,17 +132,26 @@ void recursive_unroll(
             t += currDurations.at(BlockType::StopStop);
         
         t = nextStep(t, TIME_STEP);
-        const float nextWindow = windows.at(nextStation);
+        const int nextWindow = windows.at(nextStation);
 
         if (t <= nextWindow)
         {
-            TimePos nextFullStop(TimePos::State::Stopped, t, nextStation, 0);
+			TimePos::State s;
+			if (stopRequested)
+				s = TimePos::State::Stop;
+			else
+				s = TimePos::State::Wait;
+
+            TimePos nextFullStop(s, t, nextStation, 0);
+
             bool existed = network.hasNode(nextFullStop);
             const auto nextNode = network.addNode(nextFullStop);
-            network.addEdge(currTimePos, nextFullStop); // cost!!
+            network.addEdge(currTimePos, nextFullStop); // cost is assigned in costAssignment
 
-            if (!existed) 
-                actives.push_back(nextNode);
+			if (!existed) {
+				actives.push_front(nextNode);	
+			}
+                
         }
     }
 
@@ -119,7 +159,7 @@ void recursive_unroll(
     //  only applicable if no stop is requested
     if (!stopRequested)
     {
-        if (currTimePos.state_ == TimePos::State::Stopped ||
+        if (currTimePos.state_ == TimePos::State::Wait ||
             currTimePos.state_ == TimePos::State::Fullspeed) 
         {
             int t = currTimePos.time_;
@@ -139,7 +179,7 @@ void recursive_unroll(
                 TimePos nextStopFull(TimePos::State::Fullspeed, t, nextStation, 0);
                 bool existed = network.hasNode(nextStopFull);
                 const auto nextNode = network.addNode(nextStopFull);
-                network.addEdge(currTimePos, nextStopFull); // cost!!
+                network.addEdge(currTimePos, nextStopFull); // cost in cost assignment
         
                 if (!existed)
                     actives.push_back(nextNode);
@@ -162,16 +202,15 @@ int unroll(
     Graph<string, int> path;
 	exctractPath(track, request.from, request.to, path);
 
-
     //  get upper time bounds
     unordered_map<string, int> windows;
 	stationWindows(request, path, durations, windows);	
 	
     //  add source and sink nodes
-    TimePos source(TimePos::State::Stopped, 0, "START", 0);
+    TimePos source(TimePos::State::Wait, 0, "START", 0);
     network.addNode(source);
 
-    TimePos sink(TimePos::State::Stopped, 0, "END", 0);
+    TimePos sink(TimePos::State::Wait, 0, "END", 0);
     network.addNode(sink);
 
     //  spawn initial layer in from-station according to profit function
@@ -179,9 +218,9 @@ int unroll(
 
     for (int t = request.triangle_t1; t <= request.triangle_t3; t += TIME_STEP) 
     {
-        TimePos node(TimePos::State::Stopped, t, request.from, 0);
+        TimePos node(TimePos::State::Wait, t, request.from, 0);
         const auto nodePtr = network.addNode(node);
-        network.addEdge(source, node, 0); // no cost in the starting node
+        network.addEdge(source, node); // no cost in the starting node (will be added in cost assignment)
 
         actives.push_front(nodePtr);
     }
@@ -206,6 +245,7 @@ int unroll(
     auto sinkNode = network.node(sink);
     ordering.push_back(sinkNode);
 
+	// TODO: This is not correctly accounting and identifying the paths
 	int val = 1;
 	for (auto it : sinkNode->inEdges())
 	{
@@ -217,7 +257,7 @@ int unroll(
     if (sinkNode->inEdges().size() == 0) 
 		cerr << "[warning] unroll: no valid path for request " << request.train_id << endl;
 
-	// return the number of possible paths for this request
+	// TODO: not really returning the number of possible paths for this request
 	return sinkNode->inEdges().size();
 }
 
@@ -315,7 +355,7 @@ void stationWindows(
 
         if (curr->label() == request.to)
             dt = durs.at(BlockType::FullStop);
-        else
+        else // here we could optimize this by considering intermediate stops as well
             dt = durs.at(BlockType::FullFull);
 
         t -= dt;

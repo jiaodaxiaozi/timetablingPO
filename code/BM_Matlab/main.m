@@ -18,16 +18,17 @@ global path_ids
 
 %%% Read the network data (OBS. specify the absolute path with "/")
 [ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = ...
-    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10');
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r4_t1_s7');
 %    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/realistic/malmbanan');    
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %%% Initializing parameters
-k_max = 5; % maximum number of iterations
+k_max = 3; % maximum number of iterations
 k = 1; % current iteration number
 
 %%% Parameters to store the iteration results
-mu = zeros(B,T,k_max+1);% mu(:,:,1) = rand(B,T);% prices initially random
+mu = zeros(B,T,k_max+1);
+mu(:,:,1) = rand(B,T);% prices initially random
 Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
@@ -47,7 +48,6 @@ while (k <= k_max)
     % draw the timetable with the computed optimal paths
     DrawTimetable(capCons(:,:,:,k));
     
-    break;
     
     %%% Compute the new prices (Matlab function)
     [mu(:,:,k+1), lambda(1:k,:), stop, serious, u(k+1)] = ...
@@ -60,7 +60,6 @@ while (k <= k_max)
         break;    
     end
     
-
 end
 
 % Constructs the fractional solution
@@ -131,6 +130,7 @@ l = sparse(zeros(size(x))); u = ones(size(x));%initially no variables are fixed
 MU = mu(:,:,end); %last multipliers from intitial bundle phase
 x_0 = x; %the best solution from the bundle phase
 while n_i == true;    
+    
     B_star = GeneratePotentialFixings(l,u,V,A,b,Aeq,beq);
     [x_0,l,u,n_i] = ApplyFixings(l,u,x_0,V,A,b,Aeq,beq,B_star,MU,R);
 end

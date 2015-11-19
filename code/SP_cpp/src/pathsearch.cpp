@@ -63,7 +63,7 @@ bool exctractPath(
     path.addNode(node->label());
     while(node != nullptr && pred != nullptr) 
     {
-        const int dist = pred->edgeTo(node);
+        const int dist = pred->edgeTo(node); // here no distance, so zero all the time
         path.addNode(pred->label());
         path.addEdge(pred->label(), node->label(), dist);
 
