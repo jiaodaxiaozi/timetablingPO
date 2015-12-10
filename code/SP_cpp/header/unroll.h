@@ -16,7 +16,7 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 inline int nextStep(const int t, const int step = TIME_STEP) {
-	return ceilf((float)t / step) * step;
+	return int(ceilf((float)t / step) * step);
 }
 
 
@@ -40,7 +40,7 @@ void linearBlockMatrixMapping(
 
 void assignEdgeCosts(
     const matf& costs,
-	const unordered_map<string, size_t>& ids,
+	const map<set<string>, pair<int, int>>& ids,
     const TrainRequest& request,
     Graph<TimePos, float>& network
 );

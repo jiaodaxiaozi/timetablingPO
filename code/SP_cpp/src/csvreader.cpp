@@ -5,8 +5,12 @@
 #include <algorithm>
 #include <cctype>
 #include <unordered_map>
+#include <utility>  
+#include <set>
 
 #include "csvreader.h"
+#include "common.h"
+#include <mex.h>
 
 
 static const unordered_map<string, LocationType> str2loc = {
@@ -160,39 +164,30 @@ bool readTrainRequests(
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reads the stations data (name, capacity, location type)
-bool readStationTypes(
+bool readStations(
     const string& filename,
-	unordered_map<string, int>& table,
-	unordered_map<string, size_t>& ids)
+	unordered_map<string, int>& stations)
 {
     ifstream fin(filename);
 
     if (!fin.is_open())
         return false;
 
-    string name, type, offset;
+    string name, header;
 	string cap;
 
-    getline(fin, offset);  //  read header
+    getline(fin, header);  //  read header
 
-	int count = 1;
     while (fin)
     {
         if (!getline(fin, name, ';')) 
             break;
 
 		// capacity at the station
-        if (!getline(fin, cap, ';')) 
+        if (!getline(fin, cap)) 
             return false;
 
-        if (!getline(fin, type, ';')) 
-            return false; 
-
-        if (!getline(fin, offset)) 
-            return false; 
-
-		table[name] = stoi(cap); // capacity in the station
-		ids[name] = count++;
+		stations[name] = stoi(cap); // capacity in the station
 	}
 
     return true;
@@ -200,19 +195,23 @@ bool readStationTypes(
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Reads the tracks data (track id, start, end, line, distance)
+// Reads the tracks data (track id, start, end, capacity)
 bool readTrackGraph(
     const string& filename,
-    Graph<string, int>& graph)
+    Graph<string, int>& graph,
+	unordered_map<string, int>& stations,
+	map<set<string>, pair<int,int>> &ids_cap)
 {
     ifstream fin(filename);
 
     if (!fin.is_open())
         return false;
 
-    string id, start, end, header;
+    string id, start, end, capacity, header;
 
     getline(fin, header);  // read header
+
+	int count = 1; 
 
     while (fin)
     {
@@ -222,19 +221,51 @@ bool readTrackGraph(
         if (!getline(fin, start, ';')) 
             return false;
 
-        if (!getline(fin, end)) 
-            return false; 
+		if (!getline(fin, end))
+			return false;
 
-        graph.addNode(start);//start node
-        graph.addNode(end);//end node
+		// add start node
+		graph.addNode(start)->label();//start node
 
-        if (!graph.addEdge(start, end))	//
+		// add end node
+		graph.addNode(end)->label();//end node
+
+		// add the first edge
+        if (!graph.addEdge(start, end))
             return false;
 
-		// add the opposite direction in order to avoid reading it in the track data
+		// add the opposite direction
 		if (!graph.addEdge(end, start))
 			return false;
+
+		// get the capacity
+		set<string> block;
+		block.insert(start);
+		auto it = stations.find(start);
+		if (it != stations.end()){
+			pair<int, int> val_station(count, it->second);
+			ids_cap[block] = val_station;
+			count++;
+		}
+			
+		// create and add the edge to ids_cap
+		pair<int, int> val(count, 1);
+		block.insert(end);
+		ids_cap[block] = val;
+		
+		// next identifier
+		count++;
     }
+	// The last station if any
+	// get the capacity
+	set<string> block;
+	block.insert(end);
+	auto it = stations.find(end);
+	if (it != stations.end()){
+		pair<int, int> val_station(count, it->second);
+		ids_cap[block] = val_station;
+	}
+	// OK
     return true;
 }
 

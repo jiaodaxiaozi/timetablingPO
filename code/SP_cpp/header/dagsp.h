@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <unordered_map>
+#include <string>
 //#include <mex.h>
 
 #include <stdint.h>
@@ -12,6 +13,8 @@
 #include "graph.h"
 #include "node.h"
 
+
+using namespace std;
 
 static const double infd = std::numeric_limits<double>::infinity();
 
@@ -71,7 +74,7 @@ template <class N, typename C>
 void evaluatePath(
 	const Node<N, C>* sink,
 	const unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>& predecessors,
-	const unordered_map<string, size_t> &ids,
+	const map< set<string>, pair<int, int> > &ids,
 	int B,
 	double* subGrad,
 	double* capMat
@@ -79,24 +82,98 @@ void evaluatePath(
 {
 	auto curr = predecessors.at(sink);
 
-	while (curr->label().position_ != "START")
+	// include the starting station
+	// get the times
+	int time_start = curr->label().time_ - 1;
+
+	// get the positions
+	string start = curr->label().position_;
+
+	// find the block identifier
+	set<string> arc_start;
+	arc_start.insert(start);
+	const auto& it_start = ids.find(arc_start);
+
+	// check the existence
+	assert(it_start != ids.end());
+
+	// get the block info (id, cap)
+	int b = it_start->second.first - 1;
+	int cap = it_start->second.second;
+
+	// Subgradient & capacity consumption
+	// Initialize with the capacity
+	subGrad[b + B*time_start] = cap;
+
+	// One unit of capacity is consumed
+	subGrad[b + B*time_start] -= 1;
+	capMat[b + B*time_start] = 1; // here we can add the blocking rules
+
+
+	// include the path
+	while (predecessors.at(curr)->label().position_ != "START")
 	{
 		// get the times
-		int time = curr->label().time_-1;
-		string position = curr->label().position_;
-		int b = ids.at(position)-1;
+		int time_from = curr->label().time_-1;
+		int time_to = predecessors.at(curr)->label().time_ - 1;
 
+		// get the positions
+		string to = curr->label().position_;
+		string from = predecessors.at(curr)->label().position_;
+		
+		// find the block identifier
+		set<string> arc;
+		arc.insert(from); arc.insert(to);
+		const auto& it = ids.find(arc);
+
+		// check the existence
+		assert(it != ids.end());
+
+		// get the block info (id, cap)
+		b = it->second.first-1;
+		cap = it->second.second;
+		
 		// Subgradient & capacity consumption
-		// Initialize with the capacity
-		if (subGrad[b + B*time] == 0)
-			subGrad[b + B*time] = 1; // capacity 1 for all blocks for now
+		for (int t = time_to; t <= time_from; t++){
+			// Initialize with the capacity
+			if (subGrad[b + B*t] == 0)
+				subGrad[b + B*t] = cap;
 
-		// One unit of capacity is consumed
-		subGrad[b + B*time] -= 1;
-		capMat[b + B*time] = 1;
+			// One unit of capacity is consumed
+			subGrad[b + B*t] -= 1;
+			capMat[b + B*t] = 1; // here we can add the blocking rules
+		}
 
 		// move to the predecessor node
-		curr = predecessors.at(curr);			
+		curr = predecessors.at(curr);		
 	}
+
+	// include the starting station
+	// get the times
+	int time_end = curr->label().time_ - 1;
+
+	// get the positions
+	string end = curr->label().position_;
+
+	// find the block identifier
+	set<string> arc_end;
+	arc_end.insert(end);
+	const auto& it_end = ids.find(arc_end);
+
+	// check the existence
+	assert(it_end != ids.end());
+
+	// get the block info (id, cap)
+	b = it_end->second.first - 1;
+	cap = it_end->second.second;
+
+	// Subgradient & capacity consumption
+	if (subGrad[b + B*time_end] == 0)
+		subGrad[b + B*time_end] = cap;
+
+	// One unit of capacity is consumed
+	subGrad[b + B*time_end] -= 1;
+	capMat[b + B*time_end] = 1; // here we can add the blocking rules
+
 }
 #endif

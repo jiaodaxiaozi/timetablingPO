@@ -1,6 +1,7 @@
 #include <math.h>
 #include <matrix.h>
 #include <mex.h>
+#include <string>
 
 #include <iostream>
 #include <cassert>
@@ -33,11 +34,12 @@
 - nrhs: number of input arguments (here 5)
 - prhs: input arguments
 	[0] ids
-	[1]	requests
-	[2]	network
-	[3]	ordering
-	[4]	paths indices
-	[5]	costs
+	[1] cap
+	[2]	requests
+	[3]	network
+	[4]	ordering
+	[5]	paths indices
+	[6]	costs
 
 */
 
@@ -64,7 +66,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if (DEBUG)
 		mexEvalString("disp('-> get the input data from handles ...') ");
 
-	unordered_map<string, size_t> &ids = get_object<unordered_map<string, size_t>>(prhs[0]);
+	map< set<string>, pair<int, int> > &ids = get_object< map<set<string>, pair<int, int>> >(prhs[0]);
+	//unordered_map<string, int> &stations = get_object<unordered_map<string, int>>(prhs[1]);
 	vector<TrainRequest> &requests = get_object<vector<TrainRequest>>(prhs[1]);
 	vector<Graph<TimePos, float>> &network = get_object<vector<Graph<TimePos, float>>>(prhs[2]);
 	vector<vector<const Node<TimePos, float>*>> &ordering = get_object<vector<vector<const Node<TimePos, float>*>>>(prhs[3]);
@@ -137,7 +140,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		evaluatePath(
 			ordering[i].back(),
 			path[i],
-			ids, 
+			ids,
 			B,
 			g+i*B*T,
 			capMat+i*B*T

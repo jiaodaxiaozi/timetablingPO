@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <set>
 
 #include "trainrequest.h"
 #include "graph.h"
@@ -31,9 +32,11 @@ typedef map<string, bi> sbi; // destination station and above
 typedef map<string, sbi> ssbi; // starting station and above
 typedef ssbi DurationTable; // all train motion duration info
 
+
 // Type definition for stations data
 typedef unordered_map<string, int> sl; // station and capacity
 typedef sl StationTable; // all station info
+
 
 // Reads the data table with duration of (SS, SF, FS, FF)
 bool readDurationTable(
@@ -42,10 +45,9 @@ bool readDurationTable(
 );
 
 // Reads the stations data (name, capacity, location type)
-bool readStationTypes(
+bool readStations(
     const string& filename,
-    StationTable& table,
-	unordered_map<string, size_t>& ids
+    unordered_map<string,int>& stations
 );
 
 // Reads the requests data (trainId, type, from, to, triangle, window)
@@ -57,13 +59,15 @@ bool readTrainRequests(
 // Reads the tracks data (track id, start, end, line, distance)
 bool readTrackGraph(
     const string& filename,
-    Graph<string, int>& graph
+    Graph<string, int>& graph,
+	unordered_map<string, int>& stations,
+	map<set<string>, pair<int, int>> &ids_cap
 );
 
 
 //  outputs
 ostream& operator << (ostream& out, const DurationTable& table);
-ostream& operator << (ostream& out, const StationTable& table);
+//ostream& operator << (ostream& out, const StationTable& table);
 
 
 #endif

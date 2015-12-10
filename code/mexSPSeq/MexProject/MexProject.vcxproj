@@ -73,7 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Program Files\MATLAB\R2015b\extern\include;C:\Users\abde\Documents\GitHub\TimetablePO\code\SP_cpp\header;C:\Users\abde\Documents\GitHub\TimetablePO\code\mexhandle_cpp;$(IncludePath)</IncludePath>
     <TargetExt>.mexw64</TargetExt>
-    <OutDir>..\..\BM_Matlab</OutDir>
+    <OutDir>..\..\BM_Matlab\</OutDir>
     <SourcePath>C:\Users\abde\Documents\GitHub\TimetablePO\code\SP_cpp\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

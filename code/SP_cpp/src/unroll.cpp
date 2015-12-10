@@ -4,6 +4,7 @@
 #include <cmath>
 #include <deque>
 #include <mex.h>
+#include <string>
 
 #include "unroll.h"
 #include "pathsearch.h"
@@ -62,14 +63,11 @@ void recursive_unroll(
         ) != request.intermediate_stops.end())
     );
 
-
     //  wait (don't wait in first layer. it is constructed according to profit beforehand)
     if (currStation != request.from && 
         currTimePos.state_ == TimePos::State::Wait) 
     {
 		int t = currTimePos.time_ + TIME_STEP;  // randomly wait
-
-		t = nextStep(t, TIME_STEP);
 
         if (t <= currWindow)
         {
@@ -89,8 +87,6 @@ void recursive_unroll(
 		currTimePos.state_ == TimePos::State::Stop)
 	{
 		int t = currTimePos.time_ + 6*TIME_STEP;  // minimal stop time (e.g. 3min)
-
-		t = nextStep(t, TIME_STEP);
 
 		if (t <= currWindow)
 		{
@@ -112,15 +108,12 @@ void recursive_unroll(
     //    string, which is prevented by earlier 
     //      currStation == request.to 
     //    exit
-
     const auto& currDurations = durations.at(currStation).at(nextStation);
 
     //  *-stop
 	/// !!! With this we can stop in block signals even though we do not request it
 	// for this add if(stopRequested)
-//    if (currTimePos.state_ == TimePos::State::Fullspeed ||
-//       currTimePos.state_ == TimePos::State::Stopped) 
-	if (currTimePos.state_ != TimePos::State::Stop)
+	if (stopRequested)
 	{
         int t = currTimePos.time_;
 
@@ -131,18 +124,11 @@ void recursive_unroll(
         else 
             t += currDurations.at(BlockType::StopStop);
         
-        t = nextStep(t, TIME_STEP);
         const int nextWindow = windows.at(nextStation);
 
         if (t <= nextWindow)
         {
-			TimePos::State s;
-			if (stopRequested)
-				s = TimePos::State::Stop;
-			else
-				s = TimePos::State::Wait;
-
-            TimePos nextFullStop(s, t, nextStation, 0);
+			TimePos nextFullStop(TimePos::State::Stop, t, nextStation, 0);
 
             bool existed = network.hasNode(nextFullStop);
             const auto nextNode = network.addNode(nextFullStop);
@@ -171,7 +157,6 @@ void recursive_unroll(
             else
                 t += currDurations.at(BlockType::StopFull);
 
-            t = nextStep(t, TIME_STEP);
             const float nextWindow = windows.at(nextStation);
 
             if (t <= nextWindow)
@@ -282,7 +267,7 @@ void linearBlockMatrixMapping(
 //   the graph from unroll is fix
 void assignEdgeCosts(
     const matf& costs,                          //  (block x steps) cost matrix
-	const unordered_map<string, size_t>& ids,   //  block -> cost matrix row
+	const map<set<string>, pair<int, int>> &ids_cap, //  block -> cost matrix row
     const TrainRequest& request,
     Graph<TimePos, float>& network)
 {
@@ -301,33 +286,42 @@ void assignEdgeCosts(
             const int col1 = t1 / TIME_STEP;
             const int col2 = t2 / TIME_STEP;
 
-            const string& pos = from->label().position_;
-
+            string from_pos = from->label().position_;
+			string to_pos = to->label().position_;
 			
             //  normal nodes get costs from matrix
-            if (pos != "START") 
+            if (from_pos != "START" && to_pos != "END") 
             {
-				const auto& id = ids.find(pos);
-                assert (id != ids.end());
-
-                const size_t row = id->second;
+				// find the arc
+				set<string> arc;
+				arc.insert(from_pos);
+				arc.insert(to_pos);
+				const auto& it = ids_cap.find(arc);
+				// check the existence
+				assert(it != ids_cap.end());
+				// get the block identifier
+				const size_t row = it->second.first-1;
 				// capacity usage cost minus capacity
-				edge.second = costs.colSum(row-1, col1, col2);
+				edge.second = costs.colSum(row, col1, col2)-it->second.second; // here we can add blocking rules				
 
-            //  first layer nodes get assigned negative profit
             } 
-            else { // if Source Node
+
+			//  first layer nodes get assigned negative profit			
+			if (from_pos == "START") { // if Source Node
                 edge.second = -request.profit(t2);
             }
 
             //  edges to the virtual end node have no costs for now
 			// but here we append the constant cost 
-			if (to->label().position_ == "END"){
+			if (to_pos == "END"){
 				edge.second = 0;
-				for (auto id : ids) // all capacities are assumed equal to 1
-					edge.second -= costs.colSum(id.second-1, 0, costs.cols()-1);
-			}
+				for (auto it : ids_cap) {
+					int cap = it.second.second;
+					int row = it.second.first-1;
+					edge.second -= cap*costs.colSum(row, 0, costs.cols() - 1);
+				}
 
+			}
                 
         }
     }

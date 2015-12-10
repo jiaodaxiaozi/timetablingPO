@@ -1,8 +1,4 @@
 name;capacity;loctype;meetingOffset
-KV;1;; 
-RUT_143;1;; 
-RUT_145;1;; 
-RUT;1;; 
-RSN_163;1;; 
-RSN_165;1;; 
-RSN;1;; 
+KV;3;; 
+RUT;2;; 
+RSN;4;;
