@@ -31,24 +31,32 @@ u = ones(n,1);
 [x, ~] = RMLP([],l,u,[]);
 
 return;
+%TODO;
+%Capacity consumptions of paths
+%MU multipliers from BundlePhase
+%Calculate revenues function
+%Total number of requests R in strongbranching and applyfixings
 
-%checking number of integer infeasibilities
-n_ii = 0;
-for x_i = x';
-    if x_i ~= 0 && x_i ~= 1;
-        n_ii = n_ii + 1;
+%Calculate revenues for all paths
+V = Rev;
+
+%checking if integer infeasibilities exist
+int_tol = 10^-6;
+n_i = false;
+
+for s = x;
+    if (s >= int_tol) && (s <= 1 - int_tol);
+        n_i = true;
+        break
     end
 end
 
 
-%Variable to check things work k
-k = 0;
 %loop until no integer infeasibilitys remain
-while n_ii >= 1 && k ~= 50;
-    B_star = GeneratePotentialFixings(l,u,x);
-    [l,u] = ApplyFixings(B_star,l,u);
-    k = k + 1;
+while n_i == true;
+    [B_star,x_0] = GeneratePotentialFixings(l,u,V);
+    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,Capacity_Consumptions_Of_Paths,Last_MU_Multipliers_BundlePhase_For_BlockTimes);
 end
 
 
-%return integer vector x
+%return integer vector x (or the elements in l-vector that is one).
