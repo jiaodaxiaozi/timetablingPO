@@ -30,7 +30,7 @@ v_star = -inf; %Potential function is set to minus infinity initially
 while k < k_max;
     %solve the Restricted Master LP for the current perbutated cost vector,
     %x_i is the fractional solutions.
-    x_i = RMLP(total_perturbation,l,u,[]);
+    [x_i, ~] = RMLP(total_perturbation,l,u,[]);
     %Random values to check code
     %x_i = rand(n,1);    
     %identify index for variables close to but not equal to one.

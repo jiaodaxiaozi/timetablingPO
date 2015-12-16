@@ -3,12 +3,14 @@
 
 using namespace std;
 
-TimePos::TimePos(TimePos::State state, int time, std::string position, int waitTimeRemaining) :
+TimePos::TimePos(TimePos::State state, int time, std::string position, int waitTimeRemaining, int path_id) :
     state_(state),
     time_(time),
     position_(position),
     waitTimeRemaining_(waitTimeRemaining)
-{}
+{
+	path_id_ = path_id;
+}
 
 bool TimePos::operator == (const TimePos& o) const {
     return state_ == o.state_ &&

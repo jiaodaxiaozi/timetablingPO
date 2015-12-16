@@ -84,7 +84,8 @@ class Graph
         bool addEdge(
             const N& nodefrom, 
             const N& nodeto, 
-            const C& val = 0) 
+            const C& val = 0
+			) 
         {
 			assert(hasNode(nodefrom) && hasNode(nodeto));
 

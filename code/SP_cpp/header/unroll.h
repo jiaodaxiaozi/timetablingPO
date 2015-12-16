@@ -26,8 +26,7 @@ int unroll(
 //    const StationTable& stations,
     const DurationTable& durations,
     Graph<TimePos, float>& network,
-    vector<const Node<TimePos, float>*>& ordering,
-	unordered_map<int, int>& path_ids
+    vector<const Node<TimePos, float>*>& ordering
 );
 
 // Maps the blocks with cost matrix linearly

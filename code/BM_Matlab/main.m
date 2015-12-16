@@ -2,17 +2,22 @@
 %%%  Main program: TTP using Lagrangian Relaxation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Global param
+%%% Global variables
+% C++ Pointers (insignificant here in Matlab)
 global ids
 global requests
 global network
 global ordering
 global path_ids
+
+% Matlab data
 global R
 global T
 global B
-global P
 global stations
+global capCons
+global Rev
+global mu
 
 %%% Read the network data (OBS. specify the absolute path with "/")
 [ids, stations, requests, network, ordering, path_ids, P, R, T, B, Cap, Rev] = ...
@@ -20,7 +25,11 @@ global stations
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %nr of fractional variables n (i.e. number of possible paths)
-n = sum(P(:));
+P_min = min(P);
+n = P_min*R;
+
+% Generated paths saved as capacity consumption
+capCons = zeros(B,T,n); 
 
 %l and u are initially just zeros and ones which mean no variables are
 %fixed yet
@@ -28,9 +37,8 @@ l = zeros(n,1);
 u = ones(n,1);
 
 % Bundle method without restrictions
-[x, ~] = RMLP([],l,u,[]);
+[x, ~] = RMLP([],l,u,P_min);
 
-return;
 
 %checking number of integer infeasibilities
 n_ii = 0;
@@ -39,7 +47,6 @@ for x_i = x';
         n_ii = n_ii + 1;
     end
 end
-
 
 %Variable to check things work k
 k = 0;
@@ -50,5 +57,10 @@ while n_ii >= 1 && k ~= 50;
     k = k + 1;
 end
 
-
 %return integer vector x
+% draw the timetable
+DrawTimetable(capCons, x, stations);
+% draw the prices
+DrawPrices(mu, stations);
+
+

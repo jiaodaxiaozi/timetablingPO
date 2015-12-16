@@ -49,12 +49,13 @@ using namespace std;
 #define DEBUG 1
 
 
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
 
 #pragma region arguments_check
 	// check the number of arguments
-	if (nrhs != 6)
+	if (nrhs != 7)
 		mexErrMsgTxt("Number of input arguments is incorrect!");
 
 	if (nlhs != 4)
@@ -67,11 +68,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexEvalString("disp('-> get the input data from handles ...') ");
 
 	map< set<string>, pair<int, int> > &ids = get_object< map<set<string>, pair<int, int>> >(prhs[0]);
-	//unordered_map<string, int> &stations = get_object<unordered_map<string, int>>(prhs[1]);
 	vector<TrainRequest> &requests = get_object<vector<TrainRequest>>(prhs[1]);
 	vector<Graph<TimePos, float>> &network = get_object<vector<Graph<TimePos, float>>>(prhs[2]);
 	vector<vector<const Node<TimePos, float>*>> &ordering = get_object<vector<vector<const Node<TimePos, float>*>>>(prhs[3]);
-	vector<unordered_map<int, int>> &path_ids = get_object<vector<unordered_map<int, int>>>(prhs[4]);
+	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> &path_ids = 
+		get_object<vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>>(prhs[4]);
 	
 	if (DEBUG)
 		mexEvalString("disp('OK')");
@@ -88,6 +89,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if (DEBUG)
 		mexEvalString("disp('OK')");
 
+	// get the paths to fix
+	if (DEBUG)
+		mexEvalString("disp('-> get the paths to fix ...') ");
+	size_t nbRequests = requests.size();
+	vector<int> path2fix(nbRequests);
+	for (int r = 0; r < nbRequests; r++)
+			path2fix[r] = *(mxGetPr(prhs[6]) + r);
+	if (DEBUG)
+		mexEvalString("disp('OK')");
 #pragma endregion
 
 #pragma region cost_assignment
@@ -95,7 +105,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if (DEBUG)
 		mexEvalString("disp('-> Assign edge costs ...') ");
 
-	size_t nbRequests = requests.size();
 	for (int i = 0; i < nbRequests; ++i)
 		assignEdgeCosts(mu, ids, requests[i], network[i]);
 	
@@ -107,18 +116,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	//  shortest path
 	if (DEBUG)
 		mexEvalString("disp('-> Compute the shortest paths ...') ");
+
+	// keep track of the generated paths
+	static vector<int> latest_id(nbRequests, 1);
+	static vector<unordered_map<int, int>> map_path_id(nbRequests);
+
+	int P = path_ids.size();		
 	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> path(nbRequests);
 	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
 	double *Phi = (double*)mxGetPr(plhs[0]);
 	for (int i = 0; i < nbRequests; ++i){
+		int toFix = path2fix[i];
+		if (toFix != 0){
+			path[i] = path_ids[i*(P / nbRequests) + toFix - 1];
+		}
 		Phi[i] = -dagsp(network[i], ordering[i], path[i]);
-	}
+	}				
+
 	if (DEBUG)
 		mexEvalString("disp('OK')");
 #pragma endregion
 
 #pragma region path_evaluation
-	// evaluate the path (Phi & subgradient & capacity consumption matrix)
+	// allocate the variables (Phi & subgradient & capacity consumption matrix)
 	if (DEBUG)
 		mexEvalString("disp('-> Allocate the output variables ...') ");
 
@@ -137,7 +157,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	if (DEBUG)
 		mexEvalString("disp('-> Evaluate the shortest path ...') ");
 	for (int i = 0; i < nbRequests; ++i){
-		evaluatePath(
+		// evaluate the path
+		int id = evaluatePath(
 			ordering[i].back(),
 			path[i],
 			ids,
@@ -145,20 +166,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 			g+i*B*T,
 			capMat+i*B*T
 			);
+		// save the path if it is newly generated
+		int toFix = path2fix[i];
+		if (toFix == 0){// if the path was not fixed
+			auto it = map_path_id[i].find(id);
+			if (it == map_path_id[i].end()) { // if the path was not previously generated
+				sp_index[i] = i*(P / nbRequests) + latest_id[i];
+				path_ids[i*(P / nbRequests) + latest_id[i] - 1] = path[i];
+				map_path_id[i][id] = i*(P / nbRequests) + latest_id[i];
+				latest_id[i]++;
+			}
+			else { // if the path was already generated before
+				sp_index[i] = it->second;
+			}
+		}
 	}	
 	if (DEBUG)
 		mexEvalString("disp('OK')");
-
-	if (DEBUG)
-		mexEvalString("disp('-> Get the shortest paths indices') ");
-	for (int i = 0; i < nbRequests; ++i){
-		auto sinkNode = ordering[i].back();
-		auto id = path[i].at(sinkNode)->id();
-		sp_index[i] = (path_ids[i]).at(id);
-	}
-	if (DEBUG)
-		mexEvalString("disp('OK')");
 #pragma endregion
+
+
 
 	// OK
 	if (DEBUG)

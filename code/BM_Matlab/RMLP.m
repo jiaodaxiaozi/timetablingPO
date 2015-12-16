@@ -1,65 +1,71 @@
 %Restricted master LP; 
-% RMLP(w,l,u) 
-%   w   costvector variables that model variable fixings to 0 and 1, l and u
-function [x, obj] = RMLP(c,lb,ub,p)
+% RMLP(c,l,u,P) 
+function [x, obj] = RMLP(c,lb,ub,P_max)
 
 % global variables
+% C++ Pointers (insignificant here in Matlab)
 global ids
 global requests
 global network
 global ordering
 global path_ids
+% Matlab data
 global R
 global T
 global B
-global P
-global stations
+global capCons
+global Rev
+global mu
 
 %%% Initializing parameters
-k_max = 10; % maximum number of iterations
-k = 1; % current iteration number
-stop = false;
+k_max = 7; % maximum number of iterations
+k = 1; % firsr iteration
+stop = false; % variable to stop the algorithm
 
 %%% Parameters to store the iteration results
 mu = zeros(B,T); %  initially random prices
 Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
-Path = zeros(R,k_max); % store index of the path which was chosen for each request and at each Bundle iteration
+SPs_id = zeros(R,k_max); % store index of the path which was chosen for each request and at each Bundle iteration
 u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
-capCons = zeros(B,T,R,k_max); % capacity consumption of the shortest path
+
+%%% Compute the paths to fix to one for each request
+lb = reshape(lb, [P_max R]);
+ub = reshape(ub, [P_max R]);
+paths2fix = GetFixingFromBounds(lb,ub);
 
 %%% Bundle phase
 while ((~stop) && (k <= k_max))
         
     %%% Solve the shortes path (C++ function)
-   [Phi(:,k), g(:,:,:,k), Path(:,k), capCons(:,:,:,k)] = ...
-        MexSeqSP(ids, requests, network, ordering, path_ids, mu);
-%MexSeqSP(ids, requests, network, ordering, path_ids, mu, c, lb, ub, p);
+   [Phi(:,k), g(:,:,:,k), SPs_id(:,k), Path] = ...
+        MexSeqSP(ids, requests, network, ordering, path_ids, mu, paths2fix);
     
-    % draw the timetable with the computed optimal paths
-    DrawTimetable(capCons(:,:,:,k), stations);
-       
+    %%% Save the generated path
+    for r=1:R
+        capCons(:,:,SPs_id(r,k)) = Path(:,:,r);
+    end
+    
     %%% Compute the new prices (Matlab function)
     [mu, lambda(1:k,:), stop, u(k+1)] = ...
-        bundle(mu, Phi(:,1:k), g(:,:,:,1:k), u(k));
+        bundle(mu, Phi(:,1:k), g(:,:,:,1:k), u(k), paths2fix);
     
-    % draw the density plot from the multipliers
-    DrawPrices(mu, stations);
-
     % next iteration if the step is serious
-    k = k+1
+    k = k+1;
     
 end
 
 
 % Constructs the fractional solution from lambda
-x = fract_sol(lambda, Path, P);
+x = fract_sol(lambda(1:(k-1),:), SPs_id(:,1:(k-1)), P_max);
 x = x(:);
-x = sparse(x);
+
+% Get the objective value of 
+ObjVal = GetObjValFromPath(capCons, Rev);
 
 % objective value
-obj = 0; % !TODO!
+obj = sum(ObjVal(:).*x);
 
 end
 

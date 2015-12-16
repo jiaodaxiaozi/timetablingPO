@@ -119,7 +119,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 #pragma endregion
 
 
-
 #pragma region network_construction
 	// Graph unrolling
 	if (DEBUG)
@@ -127,25 +126,31 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	size_t nbRequests = requests->size();
 	vector<Graph<TimePos, float>>* network = new vector<Graph<TimePos, float>>(nbRequests);
 	vector<vector<const Node<TimePos, float>*>>* ordering = new vector<vector<const Node<TimePos, float>*>>(nbRequests);
-	vector<unordered_map<int, int>>* path_ids = new vector<unordered_map<int, int>>(nbRequests);
 	plhs[6] = mxCreateNumericMatrix(nbRequests, 1, mxINT32_CLASS, mxREAL);
 	int *p = (int*)mxGetData(plhs[6]);
-	for (size_t i = 0; i < nbRequests; ++i)
-		p[i] = unroll((*requests)[i], track, durations, (*network)[i], (*ordering)[i], (*path_ids)[i]);
+	int P_min = INT_MAX;
+	for (size_t i = 0; i < nbRequests; ++i){
+		p[i] = unroll((*requests)[i], track, durations, (*network)[i], (*ordering)[i]);
+		if (p[i] < P_min)
+			P_min = p[i];
+	}
+
 	if (DEBUG)
 		mexEvalString("disp('OK')");
 #pragma endregion
-
 
 
 #pragma region build_output
 	// Output the data and the unrolled graph to the caller in Matlab
 	// ids - requests - network - ordering
 	plhs[0] = create_handle(ids_cap);
-	//plhs[1] = create_handle(stations);
 	plhs[2] = create_handle(requests);
 	plhs[3] = create_handle(network);
 	plhs[4] = create_handle(ordering);
+
+	// Create the structure to save the generated paths
+	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>* path_ids = 
+		new vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>(nbRequests*P_min);
 	plhs[5] = create_handle(path_ids);
 
 	// main stations (essentially for timetable outputting)

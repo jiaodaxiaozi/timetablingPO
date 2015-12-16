@@ -22,8 +22,12 @@ void recursive_unroll(
     const unordered_map<string, int>& windows,
     Graph<TimePos, float>& network,
     vector<const Node<TimePos, float>*>& ordering,
-    deque<const Node<TimePos, float>*>& actives) 
+    deque<const Node<TimePos, float>*>& actives,
+	int& nbPaths) 
 {
+
+	// auxiliary variable to monitor the number of paths
+	bool new_path = false;
 
     //  nothing to do if there is no node left
     if (actives.empty())
@@ -36,6 +40,7 @@ void recursive_unroll(
     //  dead node if time limit is reached
     const TimePos& currTimePos = currNode->label();
     const string& currStation = currTimePos.position_;
+	int currPathID = currTimePos.path_id_;
     const int currWindow = windows.at(currStation);
 
     if (currTimePos.time_ > currWindow)
@@ -71,7 +76,7 @@ void recursive_unroll(
 
         if (t <= currWindow)
         {
-			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0, currPathID);
             bool existed = network.hasNode(nextStay);
             const auto nextNode = network.addNode(nextStay);
             network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
@@ -79,6 +84,8 @@ void recursive_unroll(
 			if (!existed){
 				actives.push_front(nextNode);
 			}        
+
+			new_path = true;
         }
     }
 
@@ -86,11 +93,11 @@ void recursive_unroll(
 	if (currStation != request.from &&
 		currTimePos.state_ == TimePos::State::Stop)
 	{
-		int t = currTimePos.time_ + 6*TIME_STEP;  // minimal stop time (e.g. 3min)
+		int t = currTimePos.time_ + 4*TIME_STEP;  // minimal stop time (e.g. 2min)
 
 		if (t <= currWindow)
 		{
-			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0, currPathID);
 			bool existed = network.hasNode(nextStay);
 			const auto nextNode = network.addNode(nextStay);
 			network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
@@ -98,6 +105,8 @@ void recursive_unroll(
 			if (!existed){
 				actives.push_front(nextNode);
 			}
+
+			new_path = true;
 		}
 	}
 
@@ -128,7 +137,12 @@ void recursive_unroll(
 
         if (t <= nextWindow)
         {
-			TimePos nextFullStop(TimePos::State::Stop, t, nextStation, 0);
+			if (new_path){
+				nbPaths += 1;
+				currPathID = nbPaths;
+			}
+
+			TimePos nextFullStop(TimePos::State::Stop, t, nextStation, 0, currPathID);
 
             bool existed = network.hasNode(nextFullStop);
             const auto nextNode = network.addNode(nextFullStop);
@@ -161,13 +175,18 @@ void recursive_unroll(
 
             if (t <= nextWindow)
             {    
-                TimePos nextStopFull(TimePos::State::Fullspeed, t, nextStation, 0);
+				if (new_path){
+					nbPaths += 1;
+					currPathID = nbPaths;
+				}
+
+                TimePos nextStopFull(TimePos::State::Fullspeed, t, nextStation, 0, currPathID);
                 bool existed = network.hasNode(nextStopFull);
                 const auto nextNode = network.addNode(nextStopFull);
                 network.addEdge(currTimePos, nextStopFull); // cost in cost assignment
         
                 if (!existed)
-                    actives.push_back(nextNode);
+                    actives.push_front(nextNode);
             }
         }
     }
@@ -180,9 +199,12 @@ int unroll(
     const Graph<string, int>& track,
     const DurationTable& durations,
     Graph<TimePos, float>& network,
-	vector<const Node<TimePos, float>*>& ordering, 
-	unordered_map<int, int>& path_ids)
+	vector<const Node<TimePos, float>*>& ordering
+	)
 {
+	// initialize the number of paths
+	int nbPaths = 1;
+
     //  find path from start to goal
     Graph<string, int> path;
 	exctractPath(track, request.from, request.to, path);
@@ -203,12 +225,14 @@ int unroll(
 
     for (int t = request.triangle_t1; t <= request.triangle_t3; t += TIME_STEP) 
     {
-        TimePos node(TimePos::State::Wait, t, request.from, 0);
+		nbPaths += 1;
+        TimePos node(TimePos::State::Wait, t, request.from, 0, nbPaths);
         const auto nodePtr = network.addNode(node);
         network.addEdge(source, node); // no cost in the starting node (will be added in cost assignment)
 
         actives.push_front(nodePtr);
-    }
+
+	}
 
     //  iteratively (unrolled recursion using deque) explore possible routes
     ordering.push_back(network.node(source));
@@ -223,27 +247,19 @@ int unroll(
             windows,
             network,
             ordering,
-            actives
+            actives,
+			nbPaths
         );
     }
 
     auto sinkNode = network.node(sink);
     ordering.push_back(sinkNode);
 
-	// TODO: This is not correctly accounting and identifying the paths
-	int val = 1;
-	for (auto it : sinkNode->inEdges())
-	{
-		path_ids[it.first->id()] = val;
-		val += 1;
-	}
-
 
     if (sinkNode->inEdges().size() == 0) 
 		cerr << "[warning] unroll: no valid path for request " << request.train_id << endl;
 
-	// TODO: not really returning the number of possible paths for this request
-	return sinkNode->inEdges().size();
+	return nbPaths;
 }
 
 
@@ -303,7 +319,6 @@ void assignEdgeCosts(
 				const size_t row = it->second.first-1;
 				// capacity usage cost minus capacity
 				edge.second = costs.colSum(row, col1, col2)-it->second.second; // here we can add blocking rules				
-
             } 
 
 			//  first layer nodes get assigned negative profit			

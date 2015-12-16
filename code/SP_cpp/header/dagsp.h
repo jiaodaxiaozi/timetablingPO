@@ -42,6 +42,28 @@ void relax_node(
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+template <class N, typename C>
+C calculate_Phi(
+	const Node<N, C>* sink,
+	nnmap<N, C>& predecessors)
+{
+	C Phi = 0;
+	auto Parents = sink->inEdges();
+	auto current = sink;
+	while (!Parents.empty())
+	{
+		// get the edge cost
+		auto parent = predecessors[current];
+		auto it = Parents.find(parent);
+		assert(it != Parents.end());
+		Phi += it->second;
+		// go up to the parent
+		Parents = parent->inEdges();
+		current = parent;
+	};
+	return Phi;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class N, typename C>
@@ -50,6 +72,9 @@ C dagsp(
     const std::vector<const Node<N, C>*>& sorting,
     nnmap<N, C>& predecessors)
 {    
+	if (predecessors.size() != 0) // fixed path
+		return calculate_Phi(sorting[sorting.size()-1], predecessors);
+
     assert (g.numNodes() == sorting.size());
     
     //  initialise costs
@@ -71,7 +96,7 @@ C dagsp(
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class N, typename C>
-void evaluatePath(
+int evaluatePath(
 	const Node<N, C>* sink,
 	const unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>& predecessors,
 	const map< set<string>, pair<int, int> > &ids,
@@ -80,6 +105,10 @@ void evaluatePath(
 	double* capMat
 	)
 {
+	// path string identifier
+	int res = 0;
+
+	// current node
 	auto curr = predecessors.at(sink);
 
 	// include the starting station
@@ -113,6 +142,9 @@ void evaluatePath(
 	// include the path
 	while (predecessors.at(curr)->label().position_ != "START")
 	{
+		if (curr->label().path_id_ > res)
+			res = curr->label().path_id_;
+
 		// get the times
 		int time_from = curr->label().time_-1;
 		int time_to = predecessors.at(curr)->label().time_ - 1;
@@ -175,5 +207,6 @@ void evaluatePath(
 	subGrad[b + B*time_end] -= 1;
 	capMat[b + B*time_end] = 1; // here we can add the blocking rules
 
+	return res;
 }
 #endif
