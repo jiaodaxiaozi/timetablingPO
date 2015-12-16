@@ -31,6 +31,9 @@ n = P_min*R;
 % Generated paths saved as capacity consumption
 capCons = zeros(B,T,n); 
 
+% The lagrange multipliers
+mu = zeros(B,T); %  initially random prices
+
 %l and u are initially just zeros and ones which mean no variables are
 %fixed yet
 l = zeros(n,1);
@@ -39,28 +42,35 @@ u = ones(n,1);
 % Bundle method without restrictions
 [x, ~] = RMLP([],l,u,P_min);
 
+%TODO;
+%Capacity consumptions of paths -ok-> capCons(b,t,n)
+%MU multipliers from BundlePhase -ok-> mu
+%Calculate revenues function --> Rev(r,4), col1=tmin,...col4=vmax
+%Total number of requests R in strongbranching and applyfixings ---> R
 
-%checking number of integer infeasibilities
-n_ii = 0;
-for x_i = x';
-    if x_i ~= 0 && x_i ~= 1;
-        n_ii = n_ii + 1;
+%Calculate revenues for all paths
+V = Rev;
+
+%checking if integer infeasibilities exist
+int_tol = 10^-6;
+n_i = false;
+
+for s = x;
+    if (s >= int_tol) && (s <= 1 - int_tol)
+        n_i = true;
+        break
     end
 end
 
-%Variable to check things work k
-k = 0;
 %loop until no integer infeasibilitys remain
-while n_ii >= 1 && k ~= 50;
-    B_star = GeneratePotentialFixings(l,u,x);
-    [l,u] = ApplyFixings(B_star,l,u);
-    k = k + 1;
+while n_i == true;
+    [B_star,x_0] = GeneratePotentialFixings(l,u,V);
+    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu);
 end
 
 %return integer vector x
 % draw the timetable
-DrawTimetable(capCons, x, stations);
+%DrawTimetable(capCons, x, stations);
 % draw the prices
-DrawPrices(mu, stations);
-
+%DrawPrices(mu, stations);
 

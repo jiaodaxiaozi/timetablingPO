@@ -23,7 +23,6 @@ k = 1; % firsr iteration
 stop = false; % variable to stop the algorithm
 
 %%% Parameters to store the iteration results
-mu = zeros(B,T); %  initially random prices
 Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
