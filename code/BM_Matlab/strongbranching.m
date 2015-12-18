@@ -1,4 +1,4 @@
-function j_star = strongbranching(x_0,l,u,V)
+function j_star = strongbranching(x_0,l,u,V,P)
 %NOTE: need the total number of requests here, is it the global R?
 int_tol = 10^-6;
 r = 20;%Maximum number of fractions examined
@@ -32,7 +32,7 @@ for t = 1:nr_of_branches;
     %solve RLMP if number of variables fixed by bounds is not integer
     integer_variables = length(find(l_t_u == 1));
     if integer_variables < R;
-        x_i = RMLP(V,l_t_u,u);
+        x_i = RMLP(V,l_t_u,u,P);
     else
         x_i = l_t_u;
     end

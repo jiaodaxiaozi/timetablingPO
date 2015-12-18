@@ -39,7 +39,7 @@ while ((~stop) && (k <= k_max))
         
     %%% Solve the shortes path (C++ function)
    [Phi(:,k), g(:,:,:,k), SPs_id(:,k), Path] = ...
-        MexSeqSP(ids, requests, network, ordering, path_ids, mu, paths2fix);
+        MexSeqSP(ids, requests, network, ordering, path_ids, mu, paths2fix, c);
     
     %%% Save the generated path
     for r=1:R
@@ -48,11 +48,10 @@ while ((~stop) && (k <= k_max))
     
     %%% Compute the new prices (Matlab function)
     [mu, lambda(1:k,:), stop, u(k+1)] = ...
-        bundle(mu, Phi(:,1:k), g(:,:,:,1:k), u(k), paths2fix);
+        bundle(mu, Phi(:,1:k), g(:,:,:,1:k), u(k), paths2fix, c);
     
     % next iteration if the step is serious
     k = k+1;
-    
 end
 
 

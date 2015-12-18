@@ -55,7 +55,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 #pragma region arguments_check
 	// check the number of arguments
-	if (nrhs != 7)
+	if (nrhs != 8)
 		mexErrMsgTxt("Number of input arguments is incorrect!");
 
 	if (nlhs != 4)
@@ -71,9 +71,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	vector<TrainRequest> &requests = get_object<vector<TrainRequest>>(prhs[1]);
 	vector<Graph<TimePos, float>> &network = get_object<vector<Graph<TimePos, float>>>(prhs[2]);
 	vector<vector<const Node<TimePos, float>*>> &ordering = get_object<vector<vector<const Node<TimePos, float>*>>>(prhs[3]);
-	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> &path_ids = 
+	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> &path_ids =
 		get_object<vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>>(prhs[4]);
-	
+
 	if (DEBUG)
 		mexEvalString("disp('OK')");
 
@@ -95,10 +95,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	size_t nbRequests = requests.size();
 	vector<int> path2fix(nbRequests);
 	for (int r = 0; r < nbRequests; r++)
-			path2fix[r] = *(mxGetPr(prhs[6]) + r);
+		path2fix[r] = *(mxGetPr(prhs[6]) + r);
 	if (DEBUG)
 		mexEvalString("disp('OK')");
+
+	// get the perturbations (for RB phase)
+	if (DEBUG)
+		mexEvalString("disp('-> get the perturbations if any (for RB phase) ...') ");
+	int size_pert = mxGetM(prhs[7]);
+	int Pmax = floor(size_pert / nbRequests);
+	vector<vector<double>> pert(nbRequests, vector<double>(Pmax));
+	for (int r = 0; r < nbRequests; r++)
+		for (int p = 0; p < floor(size_pert / nbRequests); p++)
+			pert[r][p] = -*(mxGetPr(prhs[7]) + r*(size_pert / nbRequests)+p);
+	if (DEBUG)
+		mexEvalString("disp('OK')");
+
 #pragma endregion
+
 
 #pragma region cost_assignment
 	//  assign the costs
@@ -126,11 +140,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
 	double *Phi = (double*)mxGetPr(plhs[0]);
 	for (int i = 0; i < nbRequests; ++i){
+		// setting the fixed path
 		int toFix = path2fix[i];
 		if (toFix != 0){
 			path[i] = path_ids[i*(P / nbRequests) + toFix - 1];
 		}
-		Phi[i] = -dagsp(network[i], ordering[i], path[i]);
+		// computing the SP and the objective function
+		Phi[i] = -dagsp(network[i], ordering[i], path[i], pert[i], map_path_id[i]);
 	}				
 
 	if (DEBUG)

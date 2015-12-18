@@ -69,6 +69,6 @@ end
 %If B_star is empty then choose a potential variable to fix by
 %strongbranching.
 if isempty(B_star) == 1;
-    j_star = strongbranching(x_0,l,u,V,P);
+    j_star = strongbranching(x_0,l,u,V);
     B_star = j_star;
 end

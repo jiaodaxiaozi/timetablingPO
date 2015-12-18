@@ -1,4 +1,4 @@
-function [l_out,u_out,n_i] = ApplyFixings(B_star,l_in,u_in,x_0,V,Capacity_Consumptions_Of_Paths,Last_MU_Multipliers_BundlePhase_For_BlockTimes)
+function [l_out,u_out,n_i] = ApplyFixings(B_star,l_in,u_in,x_0,V,Capacity_Consumptions_Of_Paths,Last_MU_Multipliers_BundlePhase_For_BlockTimes,P)
 %NOTE: Need number of trains here, is it Global R?
 kappa = 0.2; %target value factor
 indexes_nullpaths = 1:n:n*R;
@@ -37,7 +37,7 @@ while indicator == 0;
         %Calculate temporary solution if fixing does not make x_i integer
         integer_variables = size(find(l_temp == 1));
         if integer_variables < R;
-            x_i = RMLP(V,l_temp,u_temp);
+            x_i = RMLP(V,l_temp,u_temp,P);
         else
             x_i = l_temp;
         end

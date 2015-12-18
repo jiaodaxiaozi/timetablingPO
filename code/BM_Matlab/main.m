@@ -39,7 +39,7 @@ mu = zeros(B,T); %  initially random prices
 l = zeros(n,1);
 u = ones(n,1);
 
-% Bundle method without restrictions
+% Bundle method without perturbations or restrictions
 [x, ~] = RMLP([],l,u,P_min);
 
 %TODO;
@@ -49,23 +49,17 @@ u = ones(n,1);
 %Total number of requests R in strongbranching and applyfixings ---> R
 
 %Calculate revenues for all paths
-V = Rev;
+V = GetObjValFromPath(capCons, Rev);
 
 %checking if integer infeasibilities exist
 int_tol = 10^-6;
-n_i = false;
-
-for s = x;
-    if (s >= int_tol) && (s <= 1 - int_tol)
-        n_i = true;
-        break
-    end
-end
+inf = find(( x > int_tol) & (x < 1 - int_tol));
+n_i = isempty(inf);
 
 %loop until no integer infeasibilitys remain
 while n_i == true;
-    [B_star,x_0] = GeneratePotentialFixings(l,u,V);
-    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu);
+    [B_star,x_0] = GeneratePotentialFixings(l,u,V, P_min);
+    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu,P_min);
 end
 
 %return integer vector x

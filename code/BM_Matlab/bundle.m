@@ -1,4 +1,4 @@
-function [ mu_new, lambda_new, stop, u_new] = bundle(mu, Phi, g, u, paths2fix)
+function [ mu_new, lambda_new, stop, u_new] = bundle(mu, Phi, g, u, paths2fix, c)
 %bundle Computes the new dual iterate using aggregate bundle quadratic method
 
 % Global variables from the main program
@@ -49,7 +49,7 @@ u_min = 0.1; % minimal value for u
 
 % get the achieved and the predicted descent
 [Phi_achieved,~,~,~] = ...
-    MexSeqSP(ids, requests, network, ordering, path_ids, reshape(mu_computed,[B T]), paths2fix);
+    MexSeqSP(ids, requests, network, ordering, path_ids, reshape(mu_computed,[B T]), paths2fix, c);
 Phi_predicted = (objval - 0.5*u*norm(mu_computed-reshape(mu,size(mu_computed)),2));
 achieved = sum(Phi_achieved) - sum(Phi(:,k));
 predicted = Phi_predicted  - sum(Phi(:,k));
