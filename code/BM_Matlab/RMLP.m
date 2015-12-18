@@ -16,6 +16,7 @@ global B
 global capCons
 global Rev
 global mu
+global DEBUG
 
 %%% Initializing parameters
 k_max = 7; % maximum number of iterations
@@ -37,6 +38,11 @@ paths2fix = GetFixingFromBounds(lb,ub);
 %%% Bundle phase
 while ((~stop) && (k <= k_max))
         
+    % display iteration number
+    if DEBUG
+       fprintf('Bundle: iteration %d \n',k);
+    end
+    
     %%% Solve the shortes path (C++ function)
    [Phi(:,k), g(:,:,:,k), SPs_id(:,k), Path] = ...
         MexSeqSP(ids, requests, network, ordering, path_ids, mu, paths2fix, c);
@@ -52,6 +58,7 @@ while ((~stop) && (k <= k_max))
     
     % next iteration if the step is serious
     k = k+1;
+    
 end
 
 

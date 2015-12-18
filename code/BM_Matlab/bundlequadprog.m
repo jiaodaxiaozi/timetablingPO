@@ -45,7 +45,8 @@ Aeq = [];
 beq = [];
 
 % Solve the quadratic problem (Sol = [y|mu_new]')
-[xval, fval, ~, ~, lambda_struct] = quadprog(H,f,A,b,Aeq,beq,lb,ub);
+options = optimoptions(@quadprog,'Display','off');
+[xval, fval, ~, ~, lambda_struct] = quadprog(H,f,A,b,Aeq,beq,lb,ub,[],options);
 
 % Get objective, mu and lambda
 objval = fval; % objective value

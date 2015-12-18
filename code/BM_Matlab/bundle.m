@@ -77,7 +77,6 @@ else % null step
 end
 
 % update the active set
-size(lambda_new)
 for r=1:R
     for l=1:k
         if(lambda_new(l,r) ~= 0)

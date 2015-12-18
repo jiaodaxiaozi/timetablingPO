@@ -58,8 +58,8 @@ void relax_node(
     {
         if (costs[node] + it.second < costs[it.first]) {    // it.first is dest node, 
                                                             // it.second is cost to dest node 	
-			if (pert.size() != 0 && node->label().position_ != "END"){
-				int id = getIdFromPath(predecessors, node);
+			if (pert.size() != 0 && node->label().position_ == "END"){
+ 				int id = getIdFromPath(predecessors, node);
 				int p = mapPathId[id];
 				double fluctuation = pert[p];
 				if (costs[node] + it.second + fluctuation < costs[it.first]){

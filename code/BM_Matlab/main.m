@@ -19,7 +19,14 @@ global capCons
 global Rev
 global mu
 
+% show or unshow the debugging messages
+global DEBUG
+DEBUG = 1;
+
 %%% Read the network data (OBS. specify the absolute path with "/")
+if DEBUG
+    disp('---> Reading Network Data ...');
+end
 [ids, stations, requests, network, ordering, path_ids, P, R, T, B, Cap, Rev] = ...
     MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10'); 
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
@@ -40,13 +47,11 @@ l = zeros(n,1);
 u = ones(n,1);
 
 % Bundle method without perturbations or restrictions
+if DEBUG
+    disp('---> Bundle Phase - Paths Generation ...');
+end
 [x, ~] = RMLP([],l,u,P_min);
 
-%TODO;
-%Capacity consumptions of paths -ok-> capCons(b,t,n)
-%MU multipliers from BundlePhase -ok-> mu
-%Calculate revenues function --> Rev(r,4), col1=tmin,...col4=vmax
-%Total number of requests R in strongbranching and applyfixings ---> R
 
 %Calculate revenues for all paths
 V = GetObjValFromPath(capCons, Rev);
@@ -57,11 +62,19 @@ inf = find(( x > int_tol) & (x < 1 - int_tol));
 n_i = isempty(inf);
 
 %loop until no integer infeasibilitys remain
+if DEBUG
+    disp('---> Rapid Branching Phase - Feasibility ...');
+end
 while n_i == true;
+    if DEBUG
+        disp('-- GeneratePotentialFixings ...');
+    end
     [B_star,x_0] = GeneratePotentialFixings(l,u,V, P_min);
+    if DEBUG
+        disp('-- ApplyFixings ...');
+    end
     [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu,P_min);
 end
-
 %return integer vector x
 % draw the timetable
 %DrawTimetable(capCons, x, stations);

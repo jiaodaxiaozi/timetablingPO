@@ -46,7 +46,7 @@
 using namespace std;
 
 // for debugging mode, set to 1 (0 otherwise)
-#define DEBUG 1
+#define DEBUG 0
 
 
 
