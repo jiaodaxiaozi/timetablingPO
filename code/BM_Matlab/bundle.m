@@ -24,7 +24,7 @@ end
 persistent Active
 Active_new = zeros(k,R);
 if(k>1)
-    Active_new(1:end-1,:) = Active; 
+    Active_new(1:end-1,:) = Active;   
 end
 Active_new(end,:) = ones(1,R);
 Active = Active_new;
@@ -41,8 +41,8 @@ end
 Psi = Psi_new;
 
 % Parameters
-m_L = 0.3; % in (0,0.5) for taking serious steps
-u_min = 0.1; % minimal value for u
+m_L = 0.4; % in (0,0.5) for taking serious steps
+u_min = 0.001; % minimal value for u
 
 % Solve the quadratic problem
 [mu_computed, objval, lambda_new] = bundlequadprog(mu, Psi, Active, g, u);
@@ -53,8 +53,8 @@ u_min = 0.1; % minimal value for u
 Phi_predicted = (objval - 0.5*u*norm(mu_computed-reshape(mu,size(mu_computed)),2));
 achieved = sum(Phi_achieved) - sum(Phi(:,k));
 predicted = Phi_predicted  - sum(Phi(:,k));
-% check the stopping condition (cf. Kiwiel paper)
-if predicted >= eps && k>1
+% stopping condition
+if predicted >= -0.01 && k>1
     stop = true;
     mu_new = mu;
     u_new = u;
@@ -67,22 +67,23 @@ end
 ratio = achieved/predicted;
 if ratio >= m_L % serious step
     % update the multipliers
-    mu_new = reshape(mu_computed,[B,T]);
+    mu_new = reshape(mu_computed, [B,T]);
+    mu_old = mu_new;
     % update the step size
     u_new = max([u_min u/10 2*u*(1-ratio)]);
+    % update the active set
+    for r=1:R
+        for l=1:k
+            if(lambda_new(l,r) ~= 0)
+                Active(l,r) = 1;
+            else
+                Active(l,r) = 0;
+            end  
+        end
+    end
 else % null step
     % same multipliers and step size
     mu_new = mu; 
-    u_new = u;
+    u_new = min([10*u 2*u*(1-ratio)]);
 end
 
-% update the active set
-for r=1:R
-    for l=1:k
-        if(lambda_new(l,r) ~= 0)
-            Active(l,r) = 1;
-        else
-            Active(l,r) = 0;
-        end  
-    end
-end

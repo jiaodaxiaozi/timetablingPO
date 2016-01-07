@@ -28,7 +28,7 @@ if DEBUG
     disp('---> Reading Network Data ...');
 end
 [ids, stations, requests, network, ordering, path_ids, P, R, T, B, Cap, Rev] = ...
-    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r10_t2_s10'); 
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r2_t1_s10'); 
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
 
 %nr of fractional variables n (i.e. number of possible paths)
@@ -57,8 +57,7 @@ end
 V = GetObjValFromPath(capCons, Rev);
 
 %checking if integer infeasibilities exist
-int_tol = 10^-6;
-inf = find(( x > int_tol) & (x < 1 - int_tol));
+inf = find(( x > eps) & (x < 1 - eps));
 n_i = isempty(inf);
 
 %loop until no integer infeasibilitys remain
@@ -73,11 +72,11 @@ while n_i == true;
     if DEBUG
         disp('-- ApplyFixings ...');
     end
-    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu,P_min);
+    [l,u,n_i] = ApplyFixings(B_star,l,u,x_0,V,capCons,mu,n);
 end
-%return integer vector x
-% draw the timetable
-%DrawTimetable(capCons, x, stations);
-% draw the prices
-%DrawPrices(mu, stations);
 
+% get and draw the integer solution
+% draw the timetable
+DrawTimetable(capCons, l, stations);
+% draw the prices
+DrawPrices(mu, stations);

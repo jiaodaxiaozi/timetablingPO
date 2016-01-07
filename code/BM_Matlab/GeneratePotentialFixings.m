@@ -1,12 +1,15 @@
 %GeneratePotentialFixings Generate path fixings to send to the restricted
 
-function [B_star,x_0] = GeneratePotentialFixings(l,u,V,P)
+function [B_star,x_i] = GeneratePotentialFixings(l,u,V,P)
+
+global DEBUG
+
 %initial values
 epsilon = 0.2; delta = 0.3; %integrality tolerance: epsilon, constant used in potential function: delta,
 alfa = 0.5; G = max(V(:)); % constant used to update costvector: alfa, bonus weight for spacer step: G, 
 i=0; k=0; %Step counters, i is the number of iterations, k is the number of iterations without progress
 k_s = 7; %Number of steps w/o progress before spacer step
-k_max = 20; %maximum number of allowed iterations
+k_max = 7; %maximum number of allowed iterations
 n_i = true; %True if integer infeasibilities exist 
 int_tol = 10^-6; %Tolerance for intervals around 0 and 1
 B_star = []; %Vector of indexes of potential fixings
@@ -14,6 +17,10 @@ v_star = -inf; %Potential function is set to minus infinity initially
 V_perturbed = V(:);
 
 while k < k_max;
+    % display iteration number
+    if DEBUG
+       fprintf('- GPF: iteration %d ... \n',k);
+    end
     %solve the Restricted Master LP for the current perbutated cost vector,
     %x_i is the fractional solutions.
     [x_i, ~] = RMLP(V_perturbed,l,u,P);
@@ -69,6 +76,6 @@ end
 %If B_star is empty then choose a potential variable to fix by
 %strongbranching.
 if isempty(B_star) == 1;
-    j_star = strongbranching(x_0,l,u,V,P);
+    j_star = strongbranching(x_i,l,u,V,P);
     B_star = j_star;
 end

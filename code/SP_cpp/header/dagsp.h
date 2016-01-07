@@ -62,8 +62,8 @@ void relax_node(
  				int id = getIdFromPath(predecessors, node);
 				int p = mapPathId[id];
 				double fluctuation = pert[p];
-				if (costs[node] + it.second + fluctuation < costs[it.first]){
-					costs[it.first] = costs[node] + it.second + fluctuation;
+				if (costs[node] + fluctuation < costs[it.first]){
+					costs[it.first] = costs[node] + fluctuation;
 					predecessors[it.first] = node;
 				}
 			}
@@ -88,6 +88,7 @@ C calculate_Phi(
 	C Phi = 0;
 	auto Parents = sink->inEdges();
 	auto node = sink;
+	C cost;
 	while (!Parents.empty())
 	{
 		// get the correct edge
@@ -100,13 +101,14 @@ C calculate_Phi(
 			id = curr_id;
 		// update Phi
 		Phi += it->second;
+		cost = it->second;
 		// go up to the parent
 		Parents = parent->inEdges();
 		node = parent;
 	};
 	if (pert.size() != 0){
 		int p = mapPathId[id];
-		return Phi + pert[p];
+		return Phi + pert[p] - cost;
 	}
 	else {
 		return Phi;

@@ -1,16 +1,17 @@
-function [l_out,u_out,n_i] = ApplyFixings(B_star,l_in,u_in,x_0,V,Capacity_Consumptions_Of_Paths,Last_MU_Multipliers_BundlePhase_For_BlockTimes,P)
-%NOTE: Need number of trains here, is it Global R?
+function [l_out,u_out,n_i] = ApplyFixings(B_star,l_in,u_in,x_0,V,Capacity_Consumptions_Of_Paths,Last_MU_Multipliers_BundlePhase_For_BlockTimes,n)
+
+global R %number of requests
+
 kappa = 0.2; %target value factor
-indexes_nullpaths = 1:n:n*R;
-int_tol = 10^-6; %Tolerance for intervals around 0 and 1
+indexes_nullpaths = 1:n;
 indicator = 0; %our indicator that we should apply the current set of variables in B_star
 
 %calculate lagrangian revenue for all variables in B_star
 Lagrangian_revenue = zeros(length(B_star),1);%vector for lagrangian revenue
-A_star = Capacity_Consumptions_Of_Paths(:,B_star); V_star = V(B_star);
+V_star = V(B_star);
 for i = 1:length(B_star);
-    temp = (A_star(:,i)).*Last_MU_Multipliers_BundlePhase_For_BlockTimes;
-    Lagrangian_revenue(i) = V_star(i) + sum(temp(:));
+    temp = Capacity_Consumptions_Of_Paths(:,:,B_star(i)).*Last_MU_Multipliers_BundlePhase_For_BlockTimes;
+    Lagrangian_revenue(i) = V_star(i) - sum(temp(:));
 end
 
 %Find indexes for sorting lag_rev in descending order
@@ -18,6 +19,7 @@ end
 
 %We use indexes found to sort B_star
 B_star = B_star(dec_ind);
+
 %The potential fixes of B_star that are rejected are fixed to zero
 B_star_complement = [];
 
@@ -42,7 +44,7 @@ while indicator == 0;
             x_i = l_temp;
         end
         %calculate objective value using current x_i and corresponding revenues
-        obj_l_temp = x_i'*V;
+        obj_l_temp = x_i'*V(:);
         %If we are above or equal to the target value, the fixes are fine
         %and we apply them and uppdate our indicator of this.
         if obj_l_temp >= target_value && length(B_star) ~= 1;
@@ -71,7 +73,7 @@ while indicator == 0;
     end  
 end
 %check if integer solution found i.e all requests have one fixed variable
-nr_of_fixes = length(find(l == 1));
+nr_of_fixes = length(find(l_out == 1));
 if nr_of_fixes ~= R;
     n_i = true;
 else

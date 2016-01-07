@@ -1,4 +1,4 @@
-function DrawTimetable(OccMat, x, stations)
+function DrawTimetable(OccMat, sol, stations)
 % DrawTimetable  draw a timetable as a the block-time diagram.
 %   DrawTimetable(OccMat) draws timetable from occupation matrix OccMat for all requests.
 %   See also ...
@@ -11,11 +11,11 @@ S = size(stations,1);
 P_max = ceil(n/R);
 figure();
 
-x = reshape(x, [P_max R]);
+sol = reshape(sol, [P_max R]);
 % draw a timetable for each request
 for r=1:R
     % get the idex of the path for request r
-    [id_p,~] = find(x(:,r));
+    [id_p,~] = find(sol(:,r));
     % get the timetable
     Position = zeros(1,T);
     for b=1:S

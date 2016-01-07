@@ -19,7 +19,7 @@ global mu
 global DEBUG
 
 %%% Initializing parameters
-k_max = 7; % maximum number of iterations
+k_max = 10; % maximum number of iterations
 k = 1; % firsr iteration
 stop = false; % variable to stop the algorithm
 
@@ -40,7 +40,7 @@ while ((~stop) && (k <= k_max))
         
     % display iteration number
     if DEBUG
-       fprintf('Bundle: iteration %d \n',k);
+       fprintf('Bundle: iteration %d ... \n',k);
     end
     
     %%% Solve the shortes path (C++ function)
