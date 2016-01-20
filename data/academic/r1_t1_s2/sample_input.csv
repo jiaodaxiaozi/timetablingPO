@@ -1,0 +1,2 @@
+request_id;train_type;from;to;triangle_t1;triangle_t2;triangle_t3;triangle_v;window_t1;window_t2;intermediate_stops
+1;train1;KV;RUT;100;200;300;5000;300;400;

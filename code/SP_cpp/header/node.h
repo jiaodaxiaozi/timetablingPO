@@ -66,7 +66,6 @@ class Node
             outEdges_[child] = val;
         }
 
-
         // Check if the node has an edge as an incoming edge
         const bool hasEdgeFrom(const Node* key) const {
             return inEdges_.find(key) != inEdges_.end();
@@ -124,6 +123,8 @@ class Node
 
 		// get the label of the node
         const N& label() const { return label_; }
+
+		N& label() { return label_; }
 
 		// get all the incoming edges (const version)
 		const unordered_map<const Node*, C>& inEdges() const { return inEdges_; }

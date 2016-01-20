@@ -21,19 +21,16 @@
     <ClCompile Include="..\..\SP_cpp\src\csvreader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\SP_cpp\src\pathsearch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\SP_cpp\src\timepos.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\SP_cpp\src\timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\SP_cpp\src\trainrequest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\SP_cpp\src\unroll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SP_cpp\src\pathsearch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,13 +41,7 @@
     <ClInclude Include="..\..\SP_cpp\header\csvreader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SP_cpp\header\dagsp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\SP_cpp\header\graph.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SP_cpp\header\mpi_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SP_cpp\header\node.h">
@@ -60,9 +51,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SP_cpp\header\timepos.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SP_cpp\header\timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SP_cpp\header\trainrequest.h">

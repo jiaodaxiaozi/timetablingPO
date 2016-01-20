@@ -200,6 +200,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 #pragma endregion
 
+
+
+	ofstream myfile;
+	myfile.open("network.txt");
+	for (int i = 0; i < nbRequests; i++){
+		myfile << (*network)[i];
+		myfile << "\n \n \n";
+
+	}
+	myfile.close();
+
+
 	if (DEBUG)
 		mexPrintf("mexReadData executed successfully!\n");
 

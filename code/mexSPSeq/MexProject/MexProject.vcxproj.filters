@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\SP_cpp\src\unroll.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\SP_cpp\src\path.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\SP_cpp\header\common.h">
@@ -66,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SP_cpp\header\unroll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SP_cpp\header\path.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

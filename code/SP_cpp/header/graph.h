@@ -74,7 +74,7 @@ class Graph
 
 
         // Add the node with label to the graph nodes
-        const Node<N, C>* addNode(const N& label) {
+        Node<N, C>* addNode(const N& label) {
             auto item = pair<N, Node<N, C>>(label, Node<N, C>(label));
             auto succ = nodes_.insert(item);
             return &succ.first->second;

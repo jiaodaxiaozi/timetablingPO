@@ -14,7 +14,7 @@ n_i = true; %True if integer infeasibilities exist
 int_tol = 10^-6; %Tolerance for intervals around 0 and 1
 B_star = []; %Vector of indexes of potential fixings
 v_star = -inf; %Potential function is set to minus infinity initially
-V_perturbed = V(:);
+V_perturbed = ones(size(V(:)))*max(V(:));
 
 while k < k_max;
     % display iteration number

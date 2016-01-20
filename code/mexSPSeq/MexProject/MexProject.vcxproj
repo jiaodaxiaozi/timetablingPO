@@ -132,6 +132,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\SP_cpp\src\csvreader.cpp" />
+    <ClCompile Include="..\..\SP_cpp\src\path.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\pathsearch.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\timepos.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\trainrequest.cpp" />
@@ -145,6 +146,7 @@
     <ClInclude Include="..\..\SP_cpp\header\graph.h" />
     <ClInclude Include="..\..\SP_cpp\header\matrix.h" />
     <ClInclude Include="..\..\SP_cpp\header\node.h" />
+    <ClInclude Include="..\..\SP_cpp\header\path.h" />
     <ClInclude Include="..\..\SP_cpp\header\pathsearch.h" />
     <ClInclude Include="..\..\SP_cpp\header\timepos.h" />
     <ClInclude Include="..\..\SP_cpp\header\timer.h" />

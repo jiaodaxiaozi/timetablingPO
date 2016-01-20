@@ -23,12 +23,13 @@ void recursive_unroll(
     Graph<TimePos, float>& network,
     vector<const Node<TimePos, float>*>& ordering,
     deque<const Node<TimePos, float>*>& actives,
-	int& nbPaths) 
+	int &nbPath) 
 {
-
-	// auxiliary variable to monitor the number of paths
+	// new path alternative
 	bool new_path = false;
 
+
+	//  !Abdou! Useless test, already tested before the function call
     //  nothing to do if there is no node left
     if (actives.empty())
         return;
@@ -40,9 +41,7 @@ void recursive_unroll(
     //  dead node if time limit is reached
     const TimePos& currTimePos = currNode->label();
     const string& currStation = currTimePos.position_;
-	int currPathID = currTimePos.path_id_;
     const int currWindow = windows.at(currStation);
-
     if (currTimePos.time_ > currWindow)
         return;
 
@@ -76,39 +75,46 @@ void recursive_unroll(
 
         if (t <= currWindow)
         {
-			TimePos nextStay(TimePos::State::Wait, t, currStation, 0, currPathID);
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
             bool existed = network.hasNode(nextStay);
             const auto nextNode = network.addNode(nextStay);
             network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
 
 			if (!existed){
-				actives.push_front(nextNode);
-			}        
+				actives.push_back(nextNode);
+			}
 
+			// next path will be a new alternative
 			new_path = true;
         }
     }
+
 
 	//  Intermediate compulsory stop
 	if (currStation != request.from &&
 		currTimePos.state_ == TimePos::State::Stop)
 	{
-		int t = currTimePos.time_ + 4*TIME_STEP;  // minimal stop time (e.g. 2min)
+		int t = currTimePos.time_ + 2*TIME_STEP;  // minimal stop time (e.g. 2min)
 
 		if (t <= currWindow)
 		{
-			TimePos nextStay(TimePos::State::Wait, t, currStation, 0, currPathID);
+			TimePos nextStay(TimePos::State::Wait, t, currStation, 0);
 			bool existed = network.hasNode(nextStay);
 			const auto nextNode = network.addNode(nextStay);
 			network.addEdge(currTimePos, nextStay); // the cost is to be set just before the SP computation (see. assignEdgeCosts)
 
 			if (!existed){
-				actives.push_front(nextNode);
+				actives.push_back(nextNode);
 			}
 
-			new_path = true;
+			// newly generated path or next path will be a new alternative
+			if (new_path)
+				nbPath++;
+			else
+				new_path = true;
 		}
 	}
+
 
 
     //  get duration table
@@ -137,21 +143,22 @@ void recursive_unroll(
 
         if (t <= nextWindow)
         {
-			if (new_path){
-				nbPaths += 1;
-				currPathID = nbPaths;
-			}
 
-			TimePos nextFullStop(TimePos::State::Stop, t, nextStation, 0, currPathID);
+			TimePos nextFullStop(TimePos::State::Stop, t, nextStation, 0);
 
-            bool existed = network.hasNode(nextFullStop);
+	        bool existed = network.hasNode(nextFullStop);
             const auto nextNode = network.addNode(nextFullStop);
             network.addEdge(currTimePos, nextFullStop); // cost is assigned in costAssignment
 
-			if (!existed) {
-				actives.push_front(nextNode);	
+			if (!existed){
+				actives.push_back(nextNode);
 			}
-                
+    
+			// newly generated path or next path will be a new alternative
+			if (new_path)
+				nbPath++;
+			else
+				new_path = true;
         }
     }
 
@@ -175,18 +182,21 @@ void recursive_unroll(
 
             if (t <= nextWindow)
             {    
-				if (new_path){
-					nbPaths += 1;
-					currPathID = nbPaths;
-				}
 
-                TimePos nextStopFull(TimePos::State::Fullspeed, t, nextStation, 0, currPathID);
+				TimePos nextStopFull(TimePos::State::Fullspeed, t, nextStation, 0);
                 bool existed = network.hasNode(nextStopFull);
                 const auto nextNode = network.addNode(nextStopFull);
                 network.addEdge(currTimePos, nextStopFull); // cost in cost assignment
-        
-                if (!existed)
-                    actives.push_front(nextNode);
+
+				if (!existed){
+					actives.push_back(nextNode);
+				}
+
+				// newly generated path or next path will be a new alternative
+				if (new_path)
+					nbPath++;
+				else
+					new_path = true;
             }
         }
     }
@@ -202,8 +212,8 @@ int unroll(
 	vector<const Node<TimePos, float>*>& ordering
 	)
 {
-	// initialize the number of paths
-	int nbPaths = 1;
+	// number of possible paths for the request
+	int nbPath = 0;
 
     //  find path from start to goal
     Graph<string, int> path;
@@ -223,34 +233,33 @@ int unroll(
     //  spawn initial layer in from-station according to profit function
     deque<const Node<TimePos, float>*> actives;
 
+	//  iteratively (unrolled recursion using deque) explore possible routes
+	ordering.push_back(network.node(source));
+
     for (int t = request.triangle_t1; t <= request.triangle_t3; t += TIME_STEP) 
     {
-		nbPaths += 1;
-        TimePos node(TimePos::State::Wait, t, request.from, 0, nbPaths);
-        const auto nodePtr = network.addNode(node);
+        TimePos node(TimePos::State::Wait, t, request.from, 0);
+        auto nodePtr = network.addNode(node);
         network.addEdge(source, node); // no cost in the starting node (will be added in cost assignment)
 
         actives.push_front(nodePtr);
-
+		nbPath++;
 	}
 
-    //  iteratively (unrolled recursion using deque) explore possible routes
-    ordering.push_back(network.node(source));
-
-    while (!actives.empty()) 
-    {
-        recursive_unroll(
-            request,
-            sink,
-            path,
-            durations,
-            windows,
-            network,
-            ordering,
-            actives,
-			nbPaths
-        );
-    }
+	while (!actives.empty())
+	{
+		recursive_unroll(
+			request,
+			sink,
+			path,
+			durations,
+			windows,
+			network,
+			ordering,
+			actives,
+			nbPath
+			);
+	}
 
     auto sinkNode = network.node(sink);
     ordering.push_back(sinkNode);
@@ -259,7 +268,8 @@ int unroll(
     if (sinkNode->inEdges().size() == 0) 
 		cerr << "[warning] unroll: no valid path for request " << request.train_id << endl;
 
-	return nbPaths;
+	// return the number of possible paths
+	return nbPath;
 }
 
 

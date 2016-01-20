@@ -10,13 +10,12 @@ public:
         Fullspeed, Wait, Stop
     };
     
-    TimePos(State state, int time, std::string position, int waitTimeRemaining, int path_id=0);
-    
+    TimePos(State state, int time, std::string position, int waitTimeRemaining);
+
     State state_; // train state at a station
     int time_; // clock time
     std::string position_; // train position 
     int waitTimeRemaining_; // waiting time remained
-	int path_id_; // the path id
     
 	// equality comparison
     virtual bool operator == (const TimePos& o) const;

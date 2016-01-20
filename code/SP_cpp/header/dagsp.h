@@ -24,25 +24,6 @@ using ndmap = std::unordered_map<const Node<N, C>*, double>;
 template <class N, typename C>
 using nnmap = std::unordered_map<const Node<N, C>*, const Node<N, C>*>;
 
-////////////////////////////////////////////////////////////////////////////////
-template<class N, typename C>
-int getIdFromPath(nnmap<N, C>& predecessors, const Node<N, C>* sink){
-	int id = infd;
-	const Node<N, C>* current = sink;
-	const Node<N, C>* pred = predecessors[current];
-	while (pred->label().position_ != "START")
-	{
-		// update the path id if needed
-		int curr_id = pred->label().path_id_;
-		if (curr_id < id)
-			id = curr_id;
-		// move up to the pred
-		current = pred;
-		pred = predecessors[pred];
-	};
-	return id;
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class N, typename C>
@@ -51,7 +32,7 @@ void relax_node(
     ndmap<N, C>& costs, 
     nnmap<N, C>& predecessors,
 	vector<double>& pert,
-	unordered_map<int, int> mapPathId
+	const vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> & Generated_Paths
 	) 
 {    
     for (auto it : node->outEdges()) 
@@ -59,9 +40,10 @@ void relax_node(
         if (costs[node] + it.second < costs[it.first]) {    // it.first is dest node, 
                                                             // it.second is cost to dest node 	
 			if (pert.size() != 0 && node->label().position_ == "END"){
- 				int id = getIdFromPath(predecessors, node);
-				int p = mapPathId[id];
-				double fluctuation = pert[p];
+				int pos = find(Generated_Paths.begin(), Generated_Paths.end(), predecessors) - Generated_Paths.begin();
+				double fluctuation = 0;
+				if (pos < pert.size())
+					fluctuation = pert[pos];
 				if (costs[node] + fluctuation < costs[it.first]){
 					costs[it.first] = costs[node] + fluctuation;
 					predecessors[it.first] = node;
@@ -81,24 +63,19 @@ C calculate_Phi(
 	const Node<N, C>* sink,
 	nnmap<N, C>& predecessors,
 	vector<double>& pert, 
-	unordered_map<int, int> mapPathId
+	const vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> &Generated_Paths
 	)
 {
-	int id = infd;
 	C Phi = 0;
 	auto Parents = sink->inEdges();
 	auto node = sink;
-	C cost;
+	C cost;// to get the original revenue of the path
 	while (!Parents.empty())
 	{
 		// get the correct edge
 		auto parent = predecessors[node];
 		auto it = Parents.find(parent);
 		assert(it != Parents.end());
-		// update the path id if needed
-		int curr_id = it->first->label().path_id_;
-		if (curr_id < id)
-			id = curr_id;
 		// update Phi
 		Phi += it->second;
 		cost = it->second;
@@ -107,12 +84,11 @@ C calculate_Phi(
 		node = parent;
 	};
 	if (pert.size() != 0){
-		int p = mapPathId[id];
-		return Phi + pert[p] - cost;
+		int pos = find(Generated_Paths.begin(), Generated_Paths.end(), predecessors) - Generated_Paths.begin();
+		if (pos < pert.size())
+			Phi = Phi + pert[pos] - cost;
 	}
-	else {
-		return Phi;
-	}
+	return Phi;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,11 +98,11 @@ C dagsp(
     const std::vector<const Node<N, C>*>& sorting,
     nnmap<N, C>& predecessors,
 	vector<double>& pert,
-	unordered_map<int, int> mapPathId
+	const vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> & Generated_Paths
 	)
 {    
 	if (predecessors.size() != 0) {// there is an already fixed path for this request
-		return calculate_Phi(sorting[sorting.size() - 1], predecessors, pert, mapPathId);
+		return calculate_Phi(sorting[sorting.size() - 1], predecessors, pert, Generated_Paths);
 	}
 
     assert (g.numNodes() == sorting.size());
@@ -142,7 +118,7 @@ C dagsp(
     
     //  update distances in topological order
 	for (auto it : sorting)
-		relax_node(it, costs, predecessors, pert, mapPathId);
+		relax_node(it, costs, predecessors, pert, Generated_Paths);
 	
 	// The path cost
 	return costs.at(sorting[sorting.size() - 1]);
@@ -151,7 +127,7 @@ C dagsp(
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class N, typename C>
-int evaluatePath(
+void evaluatePath(
 	const Node<N, C>* sink,
 	const unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>& predecessors,
 	const map< set<string>, pair<int, int> > &ids,
@@ -160,9 +136,6 @@ int evaluatePath(
 	double* capMat
 	)
 {
-	// path string identifier
-	int res = 0;
-
 	// current node
 	auto curr = predecessors.at(sink);
 
@@ -197,9 +170,6 @@ int evaluatePath(
 	// include the path
 	while (predecessors.at(curr)->label().position_ != "START")
 	{
-		if (curr->label().path_id_ > res)
-			res = curr->label().path_id_;
-
 		// get the times
 		int time_from = curr->label().time_-1;
 		int time_to = predecessors.at(curr)->label().time_ - 1;
@@ -261,7 +231,5 @@ int evaluatePath(
 	// One unit of capacity is consumed
 	subGrad[b + B*time_end] -= 1;
 	capMat[b + B*time_end] = 1; // here we can add the blocking rules
-
-	return res;
 }
 #endif

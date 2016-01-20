@@ -133,7 +133,6 @@
     <ClCompile Include="..\..\SP_cpp\src\csvreader.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\pathsearch.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\timepos.cpp" />
-    <ClCompile Include="..\..\SP_cpp\src\timer.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\trainrequest.cpp" />
     <ClCompile Include="..\..\SP_cpp\src\unroll.cpp" />
     <ClCompile Include="mexReadData.cpp" />
@@ -141,13 +140,10 @@
   <ItemGroup>
     <ClInclude Include="..\..\SP_cpp\header\common.h" />
     <ClInclude Include="..\..\SP_cpp\header\csvreader.h" />
-    <ClInclude Include="..\..\SP_cpp\header\dagsp.h" />
     <ClInclude Include="..\..\SP_cpp\header\graph.h" />
-    <ClInclude Include="..\..\SP_cpp\header\mpi_constants.h" />
     <ClInclude Include="..\..\SP_cpp\header\node.h" />
     <ClInclude Include="..\..\SP_cpp\header\pathsearch.h" />
     <ClInclude Include="..\..\SP_cpp\header\timepos.h" />
-    <ClInclude Include="..\..\SP_cpp\header\timer.h" />
     <ClInclude Include="..\..\SP_cpp\header\trainrequest.h" />
     <ClInclude Include="..\..\SP_cpp\header\unroll.h" />
   </ItemGroup>

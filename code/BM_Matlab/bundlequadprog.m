@@ -27,10 +27,10 @@ for r=1:R
             tempA = g(:,:,r,l);
             A((r-1)*k+l,(R+1):end) = tempA(:)';
         end
-    end
-    % rhs vector b
-    if(Active(l,r) == 1)
-        b((r-1)*k+1:r*k) = -Psi(r,:)';
+           % rhs vector b
+        if(Active(l,r) == 1)
+            b((r-1)*k+l) = -Psi(r,l);
+        end 
     end
 end
 
@@ -51,4 +51,4 @@ options = optimoptions(@quadprog,'Display','off');
 % Get objective, mu and lambda
 objval = fval; % objective value
 solval = xval((R+1):end)+mu(:); % new_mu = X + mu, prices (or multipliers)
-lambda = reshape(lambda_struct.ineqlin(1:end), [k R]); % lagrangian multipliers
+lambda = reshape(lambda_struct.ineqlin, [k R]); % lagrangian multipliers

@@ -28,8 +28,9 @@ if DEBUG
     disp('---> Reading Network Data ...');
 end
 [ids, stations, requests, network, ordering, path_ids, P, R, T, B, Cap, Rev] = ...
-    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r2_t1_s10'); 
+    MexReadData('C:/Users/abde/Documents/GitHub/TimetablePO/data/academic/r2_t1_s7'); 
 %[ids, requests, network, ordering, path_ids, P, R, T, B, Cap] = MexReadData('D:/Skola/Exjobb/TimetablePO/data');
+
 
 %nr of fractional variables n (i.e. number of possible paths)
 P_min = min(P);
@@ -51,6 +52,15 @@ if DEBUG
     disp('---> Bundle Phase - Paths Generation ...');
 end
 [x, ~] = RMLP([],l,u,P_min);
+
+return;
+
+% get and draw the integer solution
+% draw the timetable
+DrawTimetable(capCons, x, stations);
+% draw the prices
+DrawPrices(mu, stations);
+
 
 
 %Calculate revenues for all paths

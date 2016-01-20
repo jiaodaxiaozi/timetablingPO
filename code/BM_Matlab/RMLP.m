@@ -28,20 +28,31 @@ Phi = zeros(R,k_max); % dual objective function
 g = zeros(B,T,R,k_max); % sub-gradient of the dual obj function
 lambda = zeros(k_max,R); % multiplier for the convex combinations of paths
 SPs_id = zeros(R,k_max); % store index of the path which was chosen for each request and at each Bundle iteration
-u = ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
+u = 0.01*ones(1,k_max); % coefficient in front of the quadratic term in Bundle method
 
 %%% Compute the paths to fix to one for each request
 lb = reshape(lb, [P_max R]);
 ub = reshape(ub, [P_max R]);
 paths2fix = GetFixingFromBounds(lb,ub);
 
+%%% get some initial approximation
+% display iteration number
+if DEBUG
+    fprintf('Bundle: init ... \n');
+end
+[Phi(:,k), g(:,:,:,k), SPs_id(:,k), ~] = ...
+        MexSeqSP(ids, requests, network, ordering, path_ids, mu, paths2fix, c);
+
 %%% Bundle phase
 while ((~stop) && (k <= k_max))
-        
+    
     % display iteration number
     if DEBUG
        fprintf('Bundle: iteration %d ... \n',k);
     end
+    
+    % next iteration if the step is serious
+    k = k+1;
     
     %%% Solve the shortes path (C++ function)
    [Phi(:,k), g(:,:,:,k), SPs_id(:,k), Path] = ...
@@ -53,14 +64,10 @@ while ((~stop) && (k <= k_max))
     end
     
     %%% Compute the new prices (Matlab function)
-    [mu, lambda(1:k,:), stop, u(k+1)] = ...
+    [mu, lambda(1:k-1,:), stop, u(k+1)] = ...
         bundle(mu, Phi(:,1:k), g(:,:,:,1:k), u(k), paths2fix, c);
     
-    % next iteration if the step is serious
-    k = k+1;
-    
 end
-
 
 % Constructs the fractional solution from lambda
 x = fract_sol(lambda(1:(k-1),:), SPs_id(:,1:(k-1)), P_max);

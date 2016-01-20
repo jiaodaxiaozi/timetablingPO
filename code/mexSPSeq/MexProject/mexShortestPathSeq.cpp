@@ -126,16 +126,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexEvalString("disp('OK')");
 #pragma endregion
 
+
 #pragma region path_computation	
 	//  shortest path
 	if (DEBUG)
 		mexEvalString("disp('-> Compute the shortest paths ...') ");
 
-	// keep track of the generated paths
-	static vector<int> latest_id(nbRequests, 1);
-	static vector<unordered_map<int, int>> map_path_id(nbRequests);
 
-	int P = path_ids.size();		
+	static vector<unordered_map<int, int>> map_path_id(nbRequests);
+	int P = path_ids.size();
+	int Pr = P / nbRequests;
+	static vector<vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>>
+		Generated_Paths(nbRequests, vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>>(Pr));
+
 	vector<unordered_map<const Node<TimePos, float>*, const Node<TimePos, float>*>> path(nbRequests);
 	plhs[0] = mxCreateDoubleMatrix(nbRequests, 1, mxREAL);
 	double *Phi = (double*)mxGetPr(plhs[0]);
@@ -143,15 +146,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		// setting the fixed path
 		int toFix = path2fix[i];
 		if (toFix != 0){
-			path[i] = path_ids[i*(P / nbRequests) + toFix - 1];
+			path[i] = path_ids[i*(P/nbRequests) + toFix - 1];
 		}
 		// computing the SP and the objective function
-		Phi[i] = -dagsp(network[i], ordering[i], path[i], pert[i], map_path_id[i]);
+		Phi[i] = -dagsp(network[i], ordering[i], path[i], pert[i], Generated_Paths[i]);
 	}				
 
 	if (DEBUG)
 		mexEvalString("disp('OK')");
 #pragma endregion
+
 
 #pragma region path_evaluation
 	// allocate the variables (Phi & subgradient & capacity consumption matrix)
@@ -172,28 +176,32 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	if (DEBUG)
 		mexEvalString("disp('-> Evaluate the shortest path ...') ");
+	// keep track of the generated paths (init with 2 because 1 is for null path)
+	static vector<int> latest_id(nbRequests, 2);
+
+
 	for (int i = 0; i < nbRequests; ++i){
 		// evaluate the path
-		int id = evaluatePath(
+		evaluatePath(
 			ordering[i].back(),
 			path[i],
 			ids,
 			B,
-			g+i*B*T,
-			capMat+i*B*T
+			g + i*B*T,
+			capMat + i*B*T
 			);
 		// save the path if it is newly generated
 		int toFix = path2fix[i];
 		if (toFix == 0){// if the path was not fixed
-			auto it = map_path_id[i].find(id);
-			if (it == map_path_id[i].end()) { // if the path was not previously generated
+			int pos = find(Generated_Paths[i].begin(), Generated_Paths[i].end(), path[i]) - Generated_Paths[i].begin();
+			if (pos < Pr) { // if the path was not previously generated
 				sp_index[i] = i*(P / nbRequests) + latest_id[i];
 				path_ids[i*(P / nbRequests) + latest_id[i] - 1] = path[i];
-				map_path_id[i][id] = i*(P / nbRequests) + latest_id[i];
+				map_path_id[i][pos] = i*(P / nbRequests) + latest_id[i];
 				latest_id[i]++;
 			}
 			else { // if the path was already generated before
-				sp_index[i] = it->second;
+				sp_index[i] = pos;
 			}
 		}
 	}	
