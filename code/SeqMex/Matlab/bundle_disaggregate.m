@@ -3,6 +3,8 @@ function [mu_new, u_new, stop, SPs_id, i_new, Phi_new, g_new, cst_new, capCons_o
     Cap, network, graphs, genPaths, capcons)
 %bundle Computes the new dual iterate using aggregate bundle quadratic method
 
+global DEBUG_L2
+
 R = size(Phi,2);
 
 % Parameters
@@ -14,14 +16,14 @@ if(k==1)
     Active = ones(k,R);
 else
     tmp = ones(k,R);
-    %tmp(1:end-1, :) = Active;
+    tmp(1:end-1, :) = Active;
     Active = tmp;
 end
 
 
 % active constraints
 [Phi_bar, Active] = predict_disaggregate(k, mu(:,:,i_curr), Phi, g, mu, Active);
-Active = ones(k+1,R);
+%Active = ones(k+1,R);
 % Solve the quadratic problem and get the predicted dual value
 [y, Phi_predicted, ~] = bundlequadprog_disaggregate(mu, Phi, Active, g, u_curr, i_curr, Cap);
 
@@ -38,16 +40,18 @@ S_Phi_new = sum(Phi_new) + cst_new;
 
 %%% compute the predicted and achieved descents (descent = positive)
 S_Phi_curr =  sum(Phi_bar) + cst(i_curr);
-if(norm(Phi_bar - Phi(i_curr, :)) > 10^-13)
+if(DEBUG_L2 && (norm(Phi_bar - Phi(i_curr, :)) > 10^-13))
     fprintf('KO!!! %f\n', norm(Phi_bar - Phi(i_curr, :)));
 end
 S_PHI = sum(Phi(i_curr, :)) + cst(i_curr);
-achieved = S_PHI - S_Phi_new;
-predicted = S_PHI - Phi_predicted;
+achieved = S_Phi_curr - S_Phi_new;
+predicted = S_Phi_curr - Phi_predicted;
 
 % stopping condition
 if predicted < 10^-13
-    predicted
+    if(DEBUG_L2)
+        disp(predicted);
+    end
     stop = true;
     u_new = u_curr;
     i_new = i_curr;

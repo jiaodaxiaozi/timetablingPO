@@ -60,8 +60,9 @@ Graph::Graph(Network &n, uint r) {
 	nbDep = 0;
 	// create the first nodes
 	uint ideal_t = n.getRequest(r).ideal_dep;
+	int min_t = n.getRequest(r).early_dep;
 	deque<Node*> active;
-	for (int t = ideal_t - T_STEP; t > n.getRequest(r).early_dep; t -= T_STEP)
+	for (int t = ideal_t - T_STEP; t >= min_t; t -= T_STEP)
 	{
 		// if t is after the latest departure, then skip it
 		if (t > latestDep_v[path[0]])
@@ -78,7 +79,8 @@ Graph::Graph(Network &n, uint r) {
 		// next departure
 		nbDep++;
 	}
-	for (int t = ideal_t; t < n.getRequest(r).late_dep; t += T_STEP)
+	int max_t = n.getRequest(r).late_dep;
+	for (int t = ideal_t; t <= max_t; t += T_STEP)
 	{
 		// add the node to the graph
 		Node* start = new Node(path[0], t, State::Ready);

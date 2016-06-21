@@ -1,7 +1,7 @@
 function [Phi_predicted, Active_new] = predict_aggregate(k, y, Phi, g, mu, Active)
 
 % compute the predicted phi
-v = zeros(k,1);
+v = -inf(k,1);
 for l_=1:k
     if(Active(l_) == 1)
         cc = g(:,:,l_);

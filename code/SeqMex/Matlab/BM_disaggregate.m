@@ -4,6 +4,7 @@ function [x, mu_opt, Phi_it, capCons_opt] = ...
 %RMPL  Solve the relaxed problem with given fixings and perturbations 
 
 global DEBUG
+global DEBUG_L1
 
 Cap = double(Cap);
 
@@ -14,7 +15,7 @@ u = ones(k_max); % step control parameter
 
 % initialization of variables
 if DEBUG
-    fprintf('Bundle: init ... \n');
+    fprintf('BM_dis: init ... \n');
 end
 k = 1; % first iteration
 stop = false; % initially, no stop
@@ -36,8 +37,8 @@ i = ones(k_max,1); % the iteration number of the latest serious step
 while ((~stop) && (k < k_max))
     
     % display iteration number
-    if DEBUG
-       fprintf('Bundle: iteration %d ... \n',k);
+    if DEBUG_L1
+       fprintf('BM_dis: iteration %d ... \n',k);
     end
     
     %%% Compute the new prices (Matlab function)
@@ -45,7 +46,6 @@ while ((~stop) && (k < k_max))
     bundle_disaggregate(k, zeros(R,1), zeros(P,R), mu, Phi, g, u(k,1), i(k,1), cst, false, ...
     Cap, network, graphs, genPaths, cap_cons);
     
-
     % next iteration
     k = k+1;
 end
@@ -65,5 +65,12 @@ x = fract_sol(lambda(1:K,:), SPs_id(:,1:K), P);
 x = x(:);
 
 Phi_it = sum(Phi(i(1:K),:),2)+cst(i(1:K));
+if DEBUG
+    if(k < k_max)
+        fprintf('BM_dis: optimal solution found after %d iterations!\n', k);
+    else
+        fprintf('BM_dis: solution found but not optimal!\n');        
+    end
+end
 end
 

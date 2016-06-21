@@ -2,97 +2,105 @@
 %%%  Test Program : Disaggregate vs Aggregate BM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Global constantes
-% show or unshow the debugging messages
+%% global macros
+% showing debugging messages (different levels)
 global DEBUG
 DEBUG = 1;
-
+global DEBUG_L1
+DEBUG_L1 = 1;
+global DEBUG_L2
+DEBUG_L2 = 1;
+% plotting figures
 global PLOT
 PLOT = 1;
+% maximal number of generated paths per request
+P = 50;
 
-%%% Test set
-N_tests = 10;
-filename = cell(N_tests, 1);
-filename{1,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/test_AC_4_stop.csv';
-filename{2,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/test_AE_20_stop.csv';
-filename{3,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_AK_4_stop.csv';
-filename{4,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_TNK_8_stop.csv';
-filename{5,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_KMB_10_stop.csv';
-filename{6,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/test_AC_4.csv';
-filename{7,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/test_AE_20.csv';
-filename{8,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_AK_4.csv';
-filename{9,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_TNK_8.csv';
-filename{10,1} = 'C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/NK_KMB_10.csv';
-
+%% creating the test database
+testnames = {...
+    % 4 academic tests - crossing requests
+    %     'test1_AC_4';'test1_AC_4_stop';...
+    'test1_AE_20';'test1_AE_20_stop';...
+    % 4 academic tests - similar requests
+    %    'test_AC_4';'test_AC_4_stop';...
+    %    'test_AE_20';'test_AE_20_stop';...
+    % 4 test from malmbanan
+    %    'NK_AK_4';'NK_AK_4_stop';...
+    %    'NK_TNK_8';'NK_TNK_8_stop';...
+    %    'NK_KMB_10_stop';'NK_KMB_10_stop';...
+    };
+% test cases
+N = size(testnames, 1);
+filename = cell(N, 1);
+for i=1:N
+    filename{i,1} = ...
+        strcat('C:/Users/abde/Documents/GitHub/TimetablePO/code/Common/data/',...
+        testnames{i},'.csv');
+end
 %%% Read the network data (OBS. specify the absolute path with "/")
-for nt =1:1
-    %% init the test case
+for nt =1:N
+    %% init test case
     if DEBUG
-        fprintf('>>> Test case %d  \n', nt);
+        fprintf('***** Test BM_dis, case %d : %s ***** \n', nt, testnames{nt});
     end
-    % creating result folder
-    [~,name,~] = fileparts(filename{nt,1});
-    mkdir(name);
-    
+  
     %% read the test data
-    if DEBUG   
-        disp('---> Reading Network Data ...');
+    if DEBUG
+        disp('> Reading Network Data ...');
     end
     [network, graphs, R, Cap, T, genPaths] = ...
         mexReadData(filename{nt,1});
     B = size(Cap, 1);
     
-    % maximal number of generated paths per request
-    P = 50;
-   
-    %% BM aggregate    
+    
+    %% BM aggregate
     % Bundle method without perturbations or restrictions
     if DEBUG
-        disp('---> Bundle Phase - Paths Generation ...');
+        disp('> Bundle Phase - Paths Generation ...');
     end
-   [x_dis, mu_opt, Phi_dis, capCons_opt] = ...
-       BM_disaggregate(network, graphs, genPaths, Cap, B, T, R, P);
+    [x_dis, mu_opt, Phi_dis, capCons_opt] = ...
+        BM_disaggregate(network, graphs, genPaths, Cap, B, T, R, P);
     
-   
-   if PLOT
-       % draw all the generated paths
-       % get the generated paths
-       [Timetables, Revenues, capCons] = mexPaths(genPaths, P);
-       for r=1:R
-           figure(1);
-           DrawTimetable(Timetables(:,:,:,r));
-           cd(name);
-           str = sprintf('genPaths_request_%d_dis', r);
-           saveas(1,str, 'png');
-           cd ..;
-       end
-   end
-   close all;
-       
-    % saving the plots the results
-    % draw optimal prices
-    figure(1);
-    DrawPrices(mu_opt);
-    cd(name);
-    saveas(1,'optimal_prices_dis', 'png');
-    close all;
-    cd ..;
+    % creating result folder
+    if DEBUG
+        disp('> Creating results folder ...');
+    end
+    mkdir(testnames{nt});
     
-    %%% PHI & REVENUES PER ITERATION
-    % generate fig - Dual
-    figure(1);
-    plot(1:size(Phi_dis), Phi_dis, 'LineWidth',2);
-    ylabel('Value')
-    xlabel('Iteration')
-    title('Dual Objective')
-    
-    % save fig
-    cd(name);
-    saveas(1,'dual_dis', 'png')
-    cd ..;
+    if PLOT
+        % Generated paths
+        [Timetables, Revenues, capCons] = mexPaths(genPaths, P);
+        for r=1:R
+            figure('Visible','off')
+            DrawTimetable(Timetables(:,:,:,r));
+            cd(testnames{nt});
+            str = sprintf('genPaths_request_%d_dis', r);
+            saveas(1,str, 'png');
+            cd ..;
+            close all;
+        end
+        
+        % optimal prices
+        figure('Visible','off')
+        DrawPrices(mu_opt);
+        cd(testnames{nt});
+        saveas(1,'optimal_prices_dis', 'png');
+        close all;
+        cd ..;
+        
+        %%% dual objective
+        figure('Visible','off')
+        plot(1:size(Phi_dis), Phi_dis, 'LineWidth',2);
+        ylabel('Value')
+        xlabel('Iteration')
+        title('Dual Objective')
+        cd(testnames{nt});
+        saveas(1,'dual_dis', 'png')
+        cd ..;
+        close all;
+    end  
     
     %% free memeory in c++
     mexFreeMem(network, graphs, genPaths);
     clear network graph genPaths;
-    close all;
 end

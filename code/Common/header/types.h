@@ -8,16 +8,16 @@
 using namespace std;
 
 // time step
-#define T_STEP 20
+#define T_STEP 30
 
 // commercial waiting time
-#define T_STOP 120
+#define T_STOP 90
 
 // approximation of the blocking time
 #define BLOCK_RULE 60
 
 // maximum number of generated paths
-#define MAX_GEN_P 100
+//#define MAX_GEN_P 100
 
 
 // Scenario of train in blocks

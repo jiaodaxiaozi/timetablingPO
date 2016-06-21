@@ -6,6 +6,7 @@ Cap = double(Cap);
 
 % to show or unshow the debugging messages
 global DEBUG
+global DEBUG_L1
 
 % setting parameters
 k_max = 200; % maximum number of iterations
@@ -14,7 +15,7 @@ u = ones(k_max,1); % step control parameter
 
 % initialization of variables
 if DEBUG
-    fprintf('Bundle: init ... \n');
+    fprintf('BM_agg: init ... \n');
 end
 k = 1; % first iteration
 stop = false; % initially, no stop
@@ -35,8 +36,8 @@ capCons_opt = capCons;
 while ((~stop) && (k < k_max))
     
     % display iteration number
-    if DEBUG
-       fprintf('Bundle: iteration %d ... \n',k);
+    if DEBUG_L1
+       fprintf('BM_agg: iteration %d ... \n',k);
     end
     
     %%% Compute the new prices (Matlab function)
@@ -59,4 +60,11 @@ x = fract_sol(lambda(1:K,:), SPs_id(:,1:K), P);
 x = x(:);
 
 Phi_it = sum(Phi(i(1:K),:),2);
+if DEBUG
+    if(k < k_max)
+        fprintf('BM_agg: optimal solution found after %d iterations!\n', k);
+    else
+        fprintf('BM_agg: solution found but not optimal!\n');        
+    end
+end
 end

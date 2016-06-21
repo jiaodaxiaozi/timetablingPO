@@ -26,7 +26,7 @@
 */
 
 // for debugging mode, set to 1 (0 otherwise)
-#define DEBUG 0
+#define DEBUG 1
 
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
@@ -116,11 +116,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 	if (DEBUG)
 		mexEvalString("disp('OK')");
-
 #pragma endregion
 
-
-	if (DEBUG)
-		mexPrintf("mexReadData executed successfully!\n");
 
 }
