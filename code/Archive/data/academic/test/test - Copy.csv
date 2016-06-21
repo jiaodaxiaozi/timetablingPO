@@ -1,0 +1,14 @@
+from;to;stopstop;stopfull;fullstop;fullfull;;
+KV;RUT;171;153;114;96;;
+RUT;KV;229;209;169;148;;
+;;;;;;;
+name;capacity;;;;;;
+KV;2;;;;;;
+RUT;3;;;;;;
+;;;;;;;
+from;to;early_dep;late_dep;ideal_dep;revenue;late_arr;stops (separate with spaces)
+KV;RUT;100;200;300;5000;400;KV RUT RSN
+;;;;;;;
+terminus;name;;;;;;
+1;KV;;;;;;
+2;RUT;;;;;;
