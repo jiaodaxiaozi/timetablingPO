@@ -49,17 +49,8 @@ while ((~stop) && (k < k_max))
     k = k+1;
 end
 
+%%% end BM phase
 K = k-1;
-
-%% Results display
-% Constructs the fractional solution from lambda
-i_opt = i(K);
-mu_opt = mu(:,:,i_opt);
-[~, ~, lambda] = bundlequadprog_aggregate(mu, Phi, ones(K,1), g, u(i_opt), i_opt);
-x = fract_sol(lambda(1:K,:), SPs_id(:,1:K), P);
-x = x(:);
-
-Phi_it = sum(Phi(i(1:K),:),2);
 if DEBUG
     if(k < k_max)
         fprintf('BM_agg: optimal solution found after %d iterations!\n', k);
@@ -67,4 +58,19 @@ if DEBUG
         fprintf('BM_agg: solution found but not optimal!\n');        
     end
 end
+
+
+%% Results preparation
+% final lambda
+i_opt = i(K);
+mu_opt = mu(:,:,i_opt);
+[~, ~, lambda] = bundlequadprog_aggregate(mu, Phi, ones(K,1), g, u(i_opt), i_opt);
+% fractional solutions
+x = zeros(P,R,K);
+for it=1:K
+    x(:,:,it) = fract_sol(lambda(1:it,:), SPs_id(:,1:it), P);
+end
+% dual objective
+Phi_it = sum(Phi(i(1:K),:),2);
+
 end

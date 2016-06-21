@@ -1,7 +1,7 @@
 function [ x ] = fract_sol(lambda, Path, P)
 %FRACT_SOL Constructs the fractional solution
 %   Constructs the fractional solution from the lagrangian multipliers
-R = size(lambda,2);
+R = size(Path,1);
 
 % sizes
 k_max = size(lambda,1);

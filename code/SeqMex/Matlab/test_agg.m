@@ -19,14 +19,14 @@ P = 50;
 %% creating the test database
 testnames = {...
     % 4 academic tests - crossing requests
-%     'test1_AC_4';'test1_AC_4_stop';...
+     'test1_AC_4';'test1_AC_4_stop';...
     'test1_AE_20';'test1_AE_20_stop';...   
     % 4 academic tests - similar requests
-%    'test_AC_4';'test_AC_4_stop';...
-%    'test_AE_20';'test_AE_20_stop';...
+    'test_AC_4';'test_AC_4_stop';...
+    'test_AE_20';'test_AE_20_stop';...
     % 4 test from malmbanan
-%    'NK_AK_4';'NK_AK_4_stop';...
-%    'NK_TNK_8';'NK_TNK_8_stop';...
+    'NK_AK_4';'NK_AK_4_stop';...
+    'NK_TNK_8';'NK_TNK_8_stop';...
 %    'NK_KMB_10_stop';'NK_KMB_10_stop';...
     };
 % test cases
@@ -95,17 +95,23 @@ for nt =1:N
         close all;
         cd ..;
         
-        % Dual function
+        % Dual function & primal fractional solution
         if DEBUG
             disp('> Plotting the dual function ...');
         end
         figure('Visible','off')
-        plot(1:size(Phi_agg), Phi_agg, 'LineWidth',2);
+        K = size(x_agg,3);
+        F_agg = zeros(K,1);
+        for it=1:K
+            F_agg(it) = sum(sum(Revenues.*x_agg(:,:,it)));
+        end
+        plot(1:size(Phi_agg), Phi_agg,1:K, F_agg, 'LineWidth',2);
         ylabel('Value')
         xlabel('Iteration')
-        title('Dual Objective')
+        legend('Dual', 'Primal')
+        title('Dual vs Primal Objective')
         cd(testnames{nt});
-        saveas(1,'dual_agg', 'png')
+        saveas(1,'dual_primal_agg', 'png')
         cd ..;
         close all;        
     end
