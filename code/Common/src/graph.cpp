@@ -56,8 +56,6 @@ Graph::Graph(Network &n, uint r) {
 		latestDep_v[path[i]] = LatestDep;
 	}
 
-	// number of possible departures
-	nbDep = 0;
 	// create the first nodes
 	uint ideal_t = n.getRequest(r).ideal_dep;
 	int min_t = n.getRequest(r).early_dep;
@@ -68,37 +66,35 @@ Graph::Graph(Network &n, uint r) {
 		if (t > latestDep_v[path[0]])
 			continue;
 		// add the node to the graph
-		Node* start = new Node(path[0], t, State::Ready);
+		Node* start = new Node(path[0], t, State::Move);
 		start->addInNode(&source);
 		source.addOutNode(start);
 		nodes[start->getPosition()][start->getTime()][start->getState()] = start;
 		active.push_front(start);
-		ordering.insert(ordering.begin(), start);
 		// add the departure revenue
 		revDep[start] = n.getRevenue(r, t);
-		// next departure
-		nbDep++;
 	}
 	int max_t = n.getRequest(r).late_dep;
 	for (int t = ideal_t; t <= max_t; t += T_STEP)
 	{
 		// add the node to the graph
-		Node* start = new Node(path[0], t, State::Ready);
+		Node* start = new Node(path[0], t, State::Move);
 		start->addInNode(&source);
 		source.addOutNode(start);
 		nodes[start->getPosition()][start->getTime()][start->getState()] = start;
 		active.push_back(start);
-		ordering.push_back(start);
 		// add the departure revenue
 		revDep[start] = n.getRevenue(r, t);
-		// next departure
-		nbDep++;
 	}
+	// add the source node to the beginning of the ordering list of nodes
 	ordering.insert(ordering.begin(), &source);
+	// number of possible departures
+	nbDep = nodes.size();
 	// unroll the rest of the nodes (recursively)
 	while (!active.empty())
 	{
 		this->unroll(active, n);
+				printf("size = %d\n", active.size());
 	}
 	ordering.push_back(&sink);
 }
@@ -120,21 +116,21 @@ void Graph::unroll(deque<Node*> &active, Network &network){
 		if (curr_time <= latestDep_v[path[path.size() - 1]]){
 			node->addOutNode(&sink);
 			sink.addInNode(node);
+			// continue unrolling
+			return;
 		}
-		// continue unrolling
-		return;
+		else{
+			return;
+		}
 	}
 
-	string next_pos = *(find(path.begin(), path.end(), curr_pos) + 1);
-	bool stopRequested = (find(stops.begin(), stops.end(), next_pos) != stops.end()) || (next_pos == path[path.size() - 1]);
-
-	// the train is stopping for commercial waiting time
+	// the train is stopping for commercial waiting time (compulsory stop)
 	// Scenario 1) wait the commercial waiting time
 	State state = node->getState();
 	if (state == State::Stop){
-		// check if the time is not beyond the latest arrival
+		// check if the current time is enough to reach the destination
 		if (latestDep_v[curr_pos] > curr_time + T_STOP){
-			for (State var : {State::Wait, State::Ready})
+			for (State var : {State::Wait, State::Move})
 			{
 				Node *newNode;
 				// check if the node was not already created 
@@ -173,133 +169,38 @@ void Graph::unroll(deque<Node*> &active, Network &network){
 	else if (state == State::Wait){
 		// check if the time is not beyond the latest arrival
 		if (latestDep_v[curr_pos] > curr_time + T_STEP){
-			for (State var : {State::Wait, State::Ready})
+			for (State var : {State::Wait, State::Move})
 			{
-				// 1) continue waiting if this is not the first station
-				if (node->getPosition() != path[0]){
-					Node *newNode;
-					if (!nodes[curr_pos].empty() &&
-						!nodes[curr_pos][curr_time + T_STEP].empty() &&
-						nodes[curr_pos][curr_time + T_STEP].find(var) !=
-						nodes[curr_pos][curr_time + T_STEP].end()
-						)
-					{
-						newNode = nodes[curr_pos][curr_time + T_STEP][var];
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-					}
-					else
-					{
-						newNode = new Node(curr_pos, curr_time + T_STEP, var);
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-						active.push_back(newNode);
-						nodes[curr_pos][curr_time + T_STEP][var] = newNode;
-					}
-				}
-			}
-		}
-	}
-	else if (state == State::Ready){
-		// 2) next station
-		// 21) stop at the next station if there is a compulsory stop
-		if (stopRequested){
-			uint moving_time = network.getNetwork()[curr_pos][next_pos][Scenario::StopStop];
-			// check if the time is not beyond the latest arrival
-			if (latestDep_v[next_pos] > curr_time + moving_time + T_STOP){
 				Node *newNode;
-				if (!nodes[next_pos].empty() &&
-					!nodes[next_pos][curr_time + moving_time].empty() &&
-					nodes[next_pos][curr_time + moving_time].find(State::Stop) !=
-					nodes[next_pos][curr_time + moving_time].end()
+				if (!nodes[curr_pos].empty() &&
+					!nodes[curr_pos][curr_time + T_STEP].empty() &&
+					nodes[curr_pos][curr_time + T_STEP].find(var) !=
+					nodes[curr_pos][curr_time + T_STEP].end()
 					)
 				{
-					newNode = nodes[next_pos][curr_time + moving_time][State::Stop];
+					newNode = nodes[curr_pos][curr_time + T_STEP][var];
 					// link with the curr node
 					node->addOutNode(newNode);
 					newNode->addInNode(node);
 				}
-				else {
-					// create the new node
-					newNode = new Node(next_pos, curr_time + moving_time, State::Stop);
+				else
+				{
+					newNode = new Node(curr_pos, curr_time + T_STEP, var);
 					// link with the curr node
 					node->addOutNode(newNode);
 					newNode->addInNode(node);
 					active.push_back(newNode);
-					nodes[next_pos][curr_time + moving_time][State::Stop] = newNode;
-				}
-
-			}
-		}
-		else // if there is no compulsory stop in the next station
-		{
-			// 22) move and pass full speed
-			{
-				uint moving_time = network.getNetwork()[curr_pos][next_pos][Scenario::StopFull];
-				// check if the time is not beyond the latest arrival
-				if (latestDep_v[next_pos] > curr_time + moving_time){
-					Node *newNode;
-					if (!nodes[next_pos].empty() &&
-						!nodes[next_pos][curr_time + moving_time].empty() &&
-						nodes[next_pos][curr_time + moving_time].find(State::Move) !=
-						nodes[next_pos][curr_time + moving_time].end()
-						)
-					{
-						newNode = nodes[next_pos][curr_time + moving_time][State::Move];
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-					}
-					else {
-						// create the new node
-						newNode = new Node(next_pos, curr_time + moving_time, State::Move);
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-						active.push_back(newNode);
-						nodes[next_pos][curr_time + moving_time][State::Move] = newNode;
-					}
-
-				}
-			}
-			// 22) wait at the next station if it is a station
-			if (network.getStationBlockID(next_pos, next_pos) != -1){
-				uint moving_time = network.getNetwork()[curr_pos][next_pos][Scenario::StopStop];
-				// check if the time is not beyond the latest arrival
-				if (latestDep_v[next_pos] > curr_time + moving_time + T_STOP){
-					Node *newNode;
-					if (!nodes[next_pos].empty() &&
-						!nodes[next_pos][curr_time + moving_time].empty() &&
-						nodes[next_pos][curr_time + moving_time].find(State::Wait) !=
-						nodes[next_pos][curr_time + moving_time].end()
-						)
-					{
-						newNode = nodes[next_pos][curr_time + moving_time][State::Wait];
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-					}
-					else {
-						// create the new node
-						newNode = new Node(next_pos, curr_time + moving_time, State::Wait);
-						// link with the curr node
-						node->addOutNode(newNode);
-						newNode->addInNode(node);
-						active.push_back(newNode);
-						nodes[next_pos][curr_time + moving_time][State::Wait] = newNode;
-					}
-
+					nodes[curr_pos][curr_time + T_STEP][var] = newNode;
 				}
 			}
 		}
 	}
-
 	// the train is moving full speed --> 
 	// Scenario 1) continue moving full speed if there is no stop
 	// Scenario 2) move and stop if there is a stop
 	else if (state == State::Move){
+		string next_pos = *(find(path.begin(), path.end(), curr_pos) + 1);
+		bool stopRequested = (find(stops.begin(), stops.end(), next_pos) != stops.end()) || (next_pos == path[path.size() - 1]);
 		// 2) move and stop if there is a stop
 		if (stopRequested)	{
 			uint moving_time = network.getNetwork()[curr_pos][next_pos][Scenario::FullStop];
@@ -361,11 +262,10 @@ void Graph::unroll(deque<Node*> &active, Network &network){
 				}
 			}
 			// 22) wait at the next station if it is a station
-			if (network.getStationBlockID(next_pos, next_pos) != -1){
+			if (network.isStation(next_pos)){
 				uint moving_time = network.getNetwork()[curr_pos][next_pos][Scenario::FullStop];
-
 				// check if the time is not beyond the latest arrival
-				if (latestDep_v[next_pos] > curr_time + moving_time){
+				if (latestDep_v[next_pos] > curr_time + moving_time + T_STEP){
 					Node *newNode;
 					if (!nodes[next_pos].empty() &&
 						!nodes[next_pos][curr_time + moving_time].empty() &&
@@ -436,7 +336,9 @@ void Graph::computeSP(matd &costs, Network &n, Path *genPaths){
 				uint b = n.getStationBlockID(ordering[i]->getPosition(), it->getPosition());
 				uint t_A = ordering[i]->getTime();
 				uint t_B = it->getTime();
-				edge_rev = -costs.colSum(b,currStep(t_A),currStep(t_B));
+				string pos_A = ordering[i]->getPosition();
+				string pos_B = it->getPosition();
+				edge_rev = -costs.colSum(b, currStep(t_A), currStep(t_B));
 
 				// block the current block [AB] before t_A 
 				// if the train is coming to A in fullspeed
@@ -448,17 +350,16 @@ void Graph::computeSP(matd &costs, Network &n, Path *genPaths){
 				// block the current block [AB] after t_B
 				// if the train is ready to move to the next block slowly (not full speed)
 				State state_B = it->getState();
-				if (state_B == State::Ready){
+				if (state_B == State::Move && pos_A == pos_B){
 					edge_rev -= costs.colSum(b, currStep(t_B), currStep(t_B + BLOCK_RULE));
 				}
-				else if (state_B == State::Move) // if we are passing full speed at B
+				// if we are passing full speed at B which is a station
+				else if (state_B == State::Move && n.isStation(pos_B))
 				{
 					// check if B is a stopping station
-					string pos = it->getPosition();
-					int b_station = n.getStationBlockID(pos, pos);
-					if (b_station != -1){ // if B is a stopping station, block the station before t_B
-						edge_rev -= costs.colSum(b_station, currStep(t_B - BLOCK_RULE), currStep(t_B));
-					}
+					int b_station = n.getStationBlockID(pos_B, pos_B);
+					// block the station before t_B
+					edge_rev -= costs.colSum(b_station, currStep(t_B - BLOCK_RULE), currStep(t_B));
 				}
 				// update the precedency list if taking the current edge gives a higher revenue
 				if (rev[ordering[i]] + edge_rev > rev[it])
@@ -504,10 +405,10 @@ uint Graph::AddPath(Path &p, Network &n) {
 
 			// departure time from the station
 			if (departures_[s] == -1)
-				departures_[s] = currStep(t);
+				departures_[s] = t;
 
 			// arrival to the station
-			arrivals_[s] = currStep(t);
+			arrivals_[s] = t;
 
 			if (it->second == &source)
 				break;
@@ -516,6 +417,8 @@ uint Graph::AddPath(Path &p, Network &n) {
 			uint b = n.getStationBlockID(it->second->getPosition(), it->first->getPosition());
 			uint t_A = it->second->getTime();
 			uint t_B = it->first->getTime();
+			string pos_A = it->second->getPosition();
+			string pos_B = it->first->getPosition();
 
 			/////// BLOCKING RULES
 			// Blocking the current block [AB] between t_A and t_B
@@ -538,24 +441,22 @@ uint Graph::AddPath(Path &p, Network &n) {
 			// block the current block [AB] after t_B
 			// if the train is ready to move to the next block slowly (not full speed)
 			State state_B = it->first->getState();
-			if (state_B == State::Ready){
+			if (state_B == State::Move && pos_A == pos_B){
 				for (int dt = currStep(t_B); dt < currStep(t_B + BLOCK_RULE); dt++)
 				{
 					capCons_.at(b, dt) = 1;
 
 				}
 			}
-			else if (state_B == State::Move) // if we are passing full speed at B
+			else if (state_B == State::Move && n.isStation(pos_B)) // if we are passing full speed at B
 			{
 				// check if B is a stopping station
-				string pos = it->first->getPosition();
-				int b_station = n.getStationBlockID(pos, pos);
-				if (b_station != -1){ // if B is a stopping station, block the station before t_B
-					for (int dt = currStep(t_B - BLOCK_RULE); dt < currStep(t_B); dt++)
-					{
-						capCons_.at(b_station, dt) = 1;
+				int b_station = n.getStationBlockID(pos_B, pos_B);
+				// block the station before t_B
+				for (int dt = currStep(t_B - BLOCK_RULE); dt < currStep(t_B); dt++)
+				{
+					capCons_.at(b_station, dt) = 1;
 
-					}
 				}
 			}
 		}
@@ -598,7 +499,7 @@ Graph::~Graph() {
 		for (auto ns : n.second)
 			for (auto it : ns.second)
 				delete it.second;
-	nodes.clear();	
+	nodes.clear();
 
 
 }

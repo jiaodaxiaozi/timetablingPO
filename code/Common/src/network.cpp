@@ -57,7 +57,6 @@ Network::Network(string filename) {
 
 	/// read stations with capacity 2 or more
 	string name, cap;
-	map<string, uint> StatCap;
 	getline(fin, header);  // skip the separating line
 	getline(fin, header);  // read header
 	while (fin)
@@ -257,6 +256,10 @@ uint Network::getB(){
 
 uint Network::getS(){
 	return S;
+}
+
+bool Network::isStation(string pos){
+	return StatCap.find(pos) != StatCap.end();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -43,7 +43,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		mexEvalString("disp('-> Free allocated memory') ");
 
 	// get the c++ reference to the network
-	//destroy_object<Network>(prhs[0]);
+	destroy_object<Network>(prhs[0]);
 
 	// get the c++ reference to the graphs
 	vector<Graph*>&  graphs = get_object< vector<Graph*> >(prhs[1]);
@@ -52,7 +52,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		delete graphs.at(i);
 	}
 	graphs.clear();
-	//destroy_object<vector<Graph*>>(prhs[1]);
+	//
+	destroy_object<vector<Graph*>>(prhs[1]);
 
 	// get the c++ reference to the generated paths
 	vector<Path*> &generated_paths = get_object< vector<Path*> >(prhs[2]);
@@ -61,7 +62,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 		delete generated_paths.at(i);
 	}
 	generated_paths.clear();
-	//destroy_object<vector<Path*>>(prhs[2]);
+	destroy_object<vector<Path*>>(prhs[2]);
 
 	if (DEBUG)
 		mexEvalString("disp('OK')");

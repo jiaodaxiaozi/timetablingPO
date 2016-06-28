@@ -21,7 +21,7 @@ end
 
 % active constraints
 [Phi_bar, Active] = predict_aggregate(k, mu(:,:,i_curr), Phi, g, mu, Active); 
-%%Active = ones(k+1,1);
+%Active = ones(k+1,1);
 % Solve the quadratic problem and get the predicted dual value
 [y, Phi_predicted, ~] = bundlequadprog_aggregate(mu, Phi, Active, g, u_curr, i_curr);
 

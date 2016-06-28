@@ -1,0 +1,20 @@
+from;to;stopstop;stopfull;fullstop;fullfull;;
+A;B;171;153;114;96;;
+B;A;229;209;169;148;;
+B;C;203;185;114;96;;
+C;B;181;165;124;108;;
+;;;;;;;
+name;capacity;;;;;;
+A;2;;;;;;
+B;2;;;;;;
+C;2;;;;;;
+;;;;;;;
+from;to;early_dep;late_dep;ideal_dep;revenue;late_arr;stops (separate with spaces)
+A;C;1;300;150;1000;1500;B
+C;A;1;300;150;500;1500;B
+A;C;400;600;500;1000;1500;B
+C;A;400;600;500;1000;1500;B
+;;;;;;;
+terminus;;;;;;;
+A;;;;;;;
+C;;;;;;;

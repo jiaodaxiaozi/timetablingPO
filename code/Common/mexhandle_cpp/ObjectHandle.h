@@ -148,7 +148,7 @@ ObjectHandle<T>* ObjectHandle<T>::from_mex_handle(const mxArray* handle)
 		mexErrMsgTxt("Parameter is NULL. It does not represent an ObjectHandle object.");
 
 	// TODO: change this for max-min check for pointer values
-
+	/*
 	if (obj->signature != obj) // check memory has correct signature
 	mexErrMsgTxt("Parameter does not represent an ObjectHandle object.");
 
@@ -157,7 +157,7 @@ ObjectHandle<T>* ObjectHandle<T>::from_mex_handle(const mxArray* handle)
 	mexErrMsgTxt("Given ObjectHandle does not represent the correct type.");
 	}
 
-
+	*/
 
 	return obj;
 }

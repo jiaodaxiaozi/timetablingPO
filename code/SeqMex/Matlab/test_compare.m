@@ -15,16 +15,17 @@ P = 50;
 
 %% creating the test database
 testnames = {...
+    'S4';...
     % 4 academic tests - crossing requests
-     'test1_AC_4';'test1_AC_4_stop';...
-    'test1_AE_20';'test1_AE_20_stop';...
-    % 4 academic tests - similar requests
-    'test_AC_4';'test_AC_4_stop';...
-        'test_AE_20';'test_AE_20_stop';...
-    % 4 test from malmbanan
-        'NK_AK_4';'NK_AK_4_stop';...
-        'NK_TNK_8';'NK_TNK_8_stop';...
-    %    'NK_KMB_10_stop';'NK_KMB_10_stop';...
+%      'test1_AC_4';'test1_AC_4_stop';...
+%     'test1_AE_20';'test1_AE_20_stop';...
+%     % 4 academic tests - similar requests
+%     'test_AC_4';'test_AC_4_stop';...
+%         'test_AE_20';'test_AE_20_stop';...
+%     % 4 test from malmbanan
+ %        'NK_AK_4';'NK_AK_4_stop';...
+ %        'NK_TNK_8';'NK_TNK_8_stop';...
+ %       'NK_KMB_10_stop';'NK_KMB_10_stop';...
     };
 % test cases
 N = size(testnames, 1);
@@ -39,7 +40,7 @@ end
 for nt =1:N
     
     if DEBUG
-        fprintf('>>> Test case %d  \n', nt);
+        fprintf('>>> Test case %s \n', testname{nt});
     end
     
     %% Aggregate
@@ -50,9 +51,6 @@ for nt =1:N
     [network, graphs, R, Cap, T, genPaths] = ...
         mexReadData(filename{nt,1});
     B = size(Cap, 1);
-    
-    % maximal number of generated paths per request
-    P = 50;
     
     % Bundle method without perturbations or restrictions
     if DEBUG
@@ -70,7 +68,7 @@ for nt =1:N
     
     %% saving the plots the results from the aggregate
     % draw optimal prices
-            figure('Visible','off')
+    figure('Visible','off')
     DrawPrices(mu_opt);
     cd(testnames{nt});
     saveas(1,'optimal_prices_agg', 'png');
@@ -89,10 +87,6 @@ for nt =1:N
     [network, graphs, R, Cap, T, genPaths] = ...
         mexReadData(filename{nt,1});
     B = size(Cap, 1);
-    
-    % maximal number of generated paths per request
-    P = 50;
-    
     
     % Bundle method without perturbations or restrictions
     if DEBUG

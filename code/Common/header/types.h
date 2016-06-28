@@ -8,13 +8,13 @@
 using namespace std;
 
 // time step
-#define T_STEP 30
+#define T_STEP 20
 
 // commercial waiting time
-#define T_STOP 90
+#define T_STOP 120
 
 // approximation of the blocking time
-#define BLOCK_RULE 60
+#define BLOCK_RULE 120
 
 // maximum number of generated paths
 //#define MAX_GEN_P 100
@@ -33,7 +33,6 @@ enum State {
 	Stop,//train stopped (compulsory)
 	Wait,//train waiting (voluntary)
 	Move,//train moving
-	Ready//train ready for departure
 };
 
 typedef unsigned int uint;

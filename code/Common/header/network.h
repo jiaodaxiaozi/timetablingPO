@@ -19,6 +19,9 @@ private:
 	// blocks capacity
 	vector<uint> capacities;
 
+	// station capacities
+	map<string, uint> StatCap;
+
 	// mapping identifier and blocks and stops
 	map<pair<string, string>, uint> blocks;
 
@@ -47,6 +50,7 @@ public:
 	Request getRequest(uint r);
 	vector<string> getPath(string from, string to);
 	int getStationBlockID(string from, string to);
+	bool isStation(string pos);
 	map<string, map<string, Duration>> getNetwork();
 	double getRevenue(uint r, uint t);
 	uint getB();
